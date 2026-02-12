@@ -106,16 +106,26 @@ with tab1:
 with tab2:
     st.subheader("🛠️ Consultas y Updates Rápidos")
     
-    # SECCIÓN BRANCH OFFICE
+    # SECCIÓN BRANCH OFFICE DINÁMICA
     st.markdown("### 1. Cambio de Branch Office")
-    cc_branch = st.text_input("Número de Cuenta (CC):", placeholder="Ej: 123456", key="cc_branch")
+    col_cc, col_br = st.columns(2) # Dividimos en dos columnas para que se vea mejor
+    
+    with col_cc:
+        cc_branch = st.text_input("Número de Cuenta (CC):", placeholder="Ej: 123456", key="cc_branch")
+    
+    with col_br:
+        val_branch = st.text_input("Nuevo valor de Branch:", placeholder="Ej: 1", key="val_branch")
+    
     if st.button("Generar Query Branch"):
-        if cc_branch:
-            st.code(f"UPDATE CREDIT_ACCOUNTS SET BRANCH_OFFICE = 1 WHERE \"NUMBER\" = {cc_branch};", language="sql")
+        if cc_branch and val_branch:
+            # Ahora usamos la variable val_branch en lugar del 1 fijo
+            st.code(f"UPDATE CREDIT_ACCOUNTS SET BRANCH_OFFICE = {val_branch} WHERE \"NUMBER\" = {cc_branch};", language="sql")
+        else:
+            st.warning("Por favor ingrese tanto la Cuenta como el nuevo valor del Branch.")
     
     st.divider()
 
-    # SECCIÓN LÍMITES CON JOIN
+    # SECCIÓN LÍMITES CON JOIN (Se mantiene igual)
     st.markdown("### 2. Consulta de Límites (JOIN)")
     st.info("Busca directamente en CREDIT_ACCOUNTS y CREDIT_LIMITS.")
     cc_join = st.text_input("Ingrese CC para Límites:", placeholder="Ej: 999888", key="cc_join")
