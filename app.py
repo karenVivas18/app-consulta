@@ -53,7 +53,30 @@ def generar_queries_tramites(texto):
 
 def generar_delete_debit(dni):
     return f"""-- 1. Borrar asociaciones de cuentas de débito\nDELETE FROM DEBIT_CARDS_ACCOUNTS WHERE DEBIT_CARD_ID IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\n\n-- 2. Borrar estados de la tarjeta\nDELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\n\n-- 3. Borrar registros en DEBIT_CARDS\nDELETE FROM DEBIT_CARDS WHERE id IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\n\n-- 4. Borrar registro base en CARDS\nDELETE FROM CARDS WHERE id IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\n\n-- 5. Verificación\nSELECT * FROM CUSTOMERS WHERE DOCUMENT = '{dni}';"""
+def generar_delete_credit(ids_str):
+    # Limpiamos los IDs por si vienen con espacios o comas
+    ids = [i.strip() for i in ids_str.replace(',', ' ').split() if i.strip().isdigit()]
+    if not ids:
+        return "-- ⚠️ Por favor ingresa IDs numéricos válidos."
+    
+    ids_formateados = ", ".join(ids)
+    
+    return f"""-- *** PROCESO DE ELIMINACIÓN CRÉDITO (IDs: {ids_formateados}) ***
 
+-- 1. Eliminar estados en CARDS_STATUS
+DELETE FROM CARDS_STATUS 
+WHERE CARD_ID IN ({ids_formateados});
+
+-- 2. Eliminar asociación en CREDIT_CARDS
+DELETE FROM CREDIT_CARDS 
+WHERE CARD_ID IN ({ids_formateados});
+
+-- 3. Eliminar registro base en CARDS
+DELETE FROM CARDS 
+WHERE ID IN ({ids_formateados});
+
+-- 4. Verificación final
+SELECT * FROM CARDS WHERE ID IN ({ids_formateados});"""
 # --- 3. INTERFAZ ---
 st.title("🚀 QA Automation Tool COTA")
 
@@ -114,6 +137,21 @@ with tab2:
         st.code(f"UPDATE RD_LIQUIDATIONS_FISERV SET ACTUAL_DOLAR_BALANCE = {m_usd}, ARP_ACTUAL_BALANCE = {m_ars} WHERE ACCOUNT_NUMBER = {cc_liq};", language="sql")
 
 with tab3:
-    dni_input = st.text_input("DNI para borrar Débito:")
-    if st.button("Generar DELETE"):
-        st.code(generar_delete_debit(dni_input), language="sql")
+    st.error("¡CUIDADO! Operaciones DELETE permanentes.")
+    
+    col_del1, col_del2 = st.columns(2)
+    
+    with col_del1:
+        st.subheader("❌ Borrar Débito (Por DNI)")
+        dni_input = st.text_input("DNI del cliente:", key="dni_del_tc")
+        if st.button("Generar Delete Débito"):
+            if dni_input:
+                st.code(generar_delete_debit(dni_input), language="sql")
+
+    with col_del2:
+        st.subheader("❌ Borrar Crédito (Por CARD_ID)")
+        st.info("Pega los IDs de las tarjetas separados por espacios o comas.")
+        ids_input = st.text_area("IDs de Cards (CARD_ID):", placeholder="20728716, 20728707", key="ids_del_tc")
+        if st.button("Generar Delete Crédito"):
+            if ids_input:
+                st.code(generar_delete_credit(ids_input), language="sql")
