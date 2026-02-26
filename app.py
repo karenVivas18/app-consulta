@@ -4,12 +4,19 @@ import re
 # 1. Configuración de la página
 st.set_page_config(page_title="QA Automation Tool COTA", page_icon="🚀", layout="wide")
 
-# 2. Diccionarios y lógica
+# 2. Diccionarios de mapeo
 MAPEO_ESTADOS = {
-    "ACTIVA": 1, "INACTIVA": 2, "BAJA": 3, "NO INFORMADO": 4,
-    "SUSPENDIDO": 5, "RESTRINGIDA": 6, "PAUSADA": 7, "INHABILITADA": 8
+    "ACTIVA": 1, 
+    "INACTIVA": 2, 
+    "BAJA": 3, 
+    "NO INFORMADO": 4,
+    "SUSPENDIDO": 5, 
+    "RESTRINGIDA": 6, 
+    "PAUSADA": 7, 
+    "INHABILITADA": 8
 }
 
+# 3. Funciones de Lógica
 def generar_queries_tramites(texto):
     tipo = re.search(r"TIPO:\s*(TC|TD)", texto, re.I)
     tarjeta = re.search(r"TARJETA:\s*(\d{15,16})", texto, re.I)
@@ -52,113 +59,105 @@ def generar_queries_tramites(texto):
     return sql_final if sql_final else None, mongo_final if mongo_final else None
 
 def generar_delete_debit(dni):
-    return f"""-- 1. Borrar asociaciones de cuentas de débito\nDELETE FROM DEBIT_CARDS_ACCOUNTS WHERE DEBIT_CARD_ID IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\n\n-- 2. Borrar estados de la tarjeta\nDELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\n\n-- 3. Borrar registros en DEBIT_CARDS\nDELETE FROM DEBIT_CARDS WHERE id IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\n\n-- 4. Borrar registro base en CARDS\nDELETE FROM CARDS WHERE id IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\n\n-- 5. Verificación\nSELECT * FROM CUSTOMERS WHERE DOCUMENT = '{dni}';"""
+    return f"""-- DELETE DÉBITO COMPLETO\nDELETE FROM DEBIT_CARDS_ACCOUNTS WHERE DEBIT_CARD_ID IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\nDELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\nDELETE FROM DEBIT_CARDS WHERE id IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\nDELETE FROM CARDS WHERE id IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');\nSELECT * FROM CUSTOMERS WHERE DOCUMENT = '{dni}';"""
+
 def generar_delete_credit_por_cifrado(cifrados_str):
-    # Limpiamos los cifrados: quitamos comillas simples y separamos por líneas o comas
     lineas = cifrados_str.replace("'", "").replace(",", " ").split()
     cifrados = [c.strip() for c in lineas if c.strip()]
-    
-    if not cifrados:
-        return "-- ⚠️ Por favor ingresa al menos un número cifrado."
-    
-    # Formateamos para el IN ('cifrado1', 'cifrado2')
+    if not cifrados: return "-- ⚠️ Ingresa cifrados válidos."
     lista_sql = ", ".join([f"'{c}'" for c in cifrados])
-    
-    return f"""-- *** PROCESO DE ELIMINACIÓN CRÉDITO POR CIFRADO ***
--- Total tarjetas a procesar: {len(cifrados)}
+    return f"""-- DELETE TC POR CIFRADO\nDELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ID FROM CARDS WHERE "NUMBER" IN ({lista_sql}));\nDELETE FROM CREDIT_CARDS WHERE CARD_ID IN (SELECT ID FROM CARDS WHERE "NUMBER" IN ({lista_sql}));\nDELETE FROM CARDS WHERE "NUMBER" IN ({lista_sql});\nSELECT * FROM CARDS WHERE "NUMBER" IN ({lista_sql});"""
 
--- 1. Eliminar estados en CARDS_STATUS
-DELETE FROM CARDS_STATUS 
-WHERE CARD_ID IN (SELECT ID FROM CARDS WHERE "NUMBER" IN ({lista_sql}));
-
--- 2. Eliminar asociación en CREDIT_CARDS
-DELETE FROM CREDIT_CARDS 
-WHERE CARD_ID IN (SELECT ID FROM CARDS WHERE "NUMBER" IN ({lista_sql}));
-
--- 3. Eliminar registro base en CARDS
-DELETE FROM CARDS 
-WHERE "NUMBER" IN ({lista_sql});
-
--- 4. Verificación (Debería devolver 0 filas)
-SELECT * FROM CARDS WHERE "NUMBER" IN ({lista_sql});"""
-# --- 3. INTERFAZ ---
+# --- 4. INTERFAZ ---
 st.title("🚀 QA Automation Tool COTA")
 
 tab1, tab2, tab3 = st.tabs(["📝 Trámites Diarios", "🔧 Varios & Settlement", "⚠️ Eliminación"])
 
 with tab1:
-    input_text = st.text_area("Mensaje del Chat:", height=150)
+    st.markdown("### Generador de Trámites Rápidos")
+    input_text = st.text_area("Pegue el mensaje del chat aquí:", height=150)
     if st.button("Generar Queries de Trámite"):
         sql, mongo = generar_queries_tramites(input_text)
         if sql: st.code(sql, language="sql")
         if mongo: st.code(mongo, language="javascript")
 
 with tab2:
-    # FILA 1: BRANCH Y LÍMITES
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("🏦 Branch Office")
-        c1, c2 = st.columns(2)
-        cc_br = c1.text_input("Cuenta (CC):", key="br_cc")
-        val_br = c2.text_input("Nuevo Branch:", key="br_val")
-        if st.button("Generar Update Branch"):
-            st.code(f"UPDATE CREDIT_ACCOUNTS SET BRANCH_OFFICE = {val_br} WHERE \"NUMBER\" = {cc_br};", language="sql")
-
-    with col2:
-        st.subheader("📊 Consulta Límites")
-        cc_lim = st.text_input("CC para ver Límites:", key="lim_cc")
-        if st.button("Generar JOIN Límites"):
-            st.code(f"SELECT ca.\"NUMBER\", cl.* FROM CREDIT_ACCOUNTS ca INNER JOIN CREDIT_LIMITS cl ON ca.LIMIT_ID = cl.ID WHERE ca.\"NUMBER\" = {cc_lim};", language="sql")
+    # --- SECCIÓN: DATOS DEL CLIENTE ---
+    st.subheader("👤 Datos del Cliente")
+    col_n, col_a, col_d, col_g = st.columns(4)
+    c_name = col_n.text_input("Nombre:", key="cust_name")
+    c_surname = col_a.text_input("Apellido:", key="cust_surname")
+    c_dni = col_d.text_input("DNI:", key="cust_dni")
+    c_gender = col_g.selectbox("Género:", ["M", "F", "X"], key="cust_gen")
+    if st.button("Generar Update Cliente"):
+        if c_name and c_surname and c_dni:
+            st.code(f"UPDATE CUSTOMERS SET NAME = '{c_name.upper()}', SURNAME = '{c_surname.upper()}' WHERE DOCUMENT = '{c_dni}' AND GENDER = '{c_gender}';", language="sql")
 
     st.divider()
 
-    # FILA 2: EXCHANGE RATE (DÓLAR)
+    # --- SECCIÓN: ESTADO DE CUENTA ---
+    st.subheader("💳 Estado de Cuenta (ACCOUNTS_STATUS)")
+    col_acc_1, col_acc_2 = st.columns(2)
+    acc_num = col_acc_1.text_input("Número de Cuenta (CC):", key="acc_num_val")
+    acc_status = col_acc_2.selectbox("Estado Deseado:", list(MAPEO_ESTADOS.keys()), key="acc_state_val")
+    if st.button("Generar Update Estado Cuenta"):
+        if acc_num:
+            id_st = MAPEO_ESTADOS[acc_status]
+            st.code(f"-- CAMBIO A {acc_status}\nUPDATE ACCOUNTS_STATUS SET STATUS_ID = {id_st}, UPDATED_AT = CURRENT_TIMESTAMP WHERE ACCOUNT_ID = (SELECT ID FROM CREDIT_ACCOUNTS WHERE \"NUMBER\" = '{acc_num}');", language="sql")
+
+    st.divider()
+
+    # --- SECCIÓN: BRANCH Y LÍMITES ---
+    col_b1, col_b2 = st.columns(2)
+    with col_b1:
+        st.subheader("🏦 Branch Office")
+        cc_br = st.text_input("CC para Branch:", key="br_cc")
+        val_br = st.text_input("Nuevo valor Branch:", key="br_val")
+        if st.button("Generar Update Branch"):
+            st.code(f"UPDATE CREDIT_ACCOUNTS SET BRANCH_OFFICE = {val_br} WHERE \"NUMBER\" = '{cc_br}';", language="sql")
+    with col_b2:
+        st.subheader("📊 Consulta Límites")
+        cc_lim = st.text_input("CC para Límites:", key="lim_cc")
+        if st.button("Generar JOIN Límites"):
+            st.code(f"SELECT ca.\"NUMBER\", cl.* FROM CREDIT_ACCOUNTS ca INNER JOIN CREDIT_LIMITS cl ON ca.LIMIT_ID = cl.ID WHERE ca.\"NUMBER\" = '{cc_lim}';", language="sql")
+
+    st.divider()
+
+    # --- SECCIÓN: DÓLAR ---
     st.subheader("💵 Dollar Exchange Rates")
-    st.info("Si la fecha no existe, usa el INSERT. Si ya existe, usa el UPDATE.")
     c_f, c_p, c_s = st.columns(3)
-    f_rate = c_f.date_input("Fecha del Rate:")
+    f_rate = c_f.date_input("Fecha Rate:")
     p_rate = c_p.text_input("Purchase Price:", value="200")
     s_rate = c_s.text_input("Selling Price:", value="1200")
-    
-    col_btn1, col_btn2 = st.columns(2)
-    if col_btn1.button("Generar UPDATE Dólar"):
+    col_d1, col_d2 = st.columns(2)
+    if col_d1.button("Generar UPDATE Dólar"):
         st.code(f"UPDATE DOLLAR_EXCHANGE_RATES SET PURCHASE = {p_rate}, SELLING = {s_rate} WHERE DATE_RATE = TO_DATE('{f_rate}', 'YYYY-MM-DD');", language="sql")
-    if col_btn2.button("Generar INSERT Dólar (Si es nuevo)"):
+    if col_d2.button("Generar INSERT Dólar"):
         st.code(f"INSERT INTO DOLLAR_EXCHANGE_RATES (ID, DATE_RATE, PURCHASE, SELLING, CREATED_AT) VALUES (NEXTVAL('DOLLAR_EXCHANGE_RATES_ID_SEQ'), TO_DATE('{f_rate}', 'YYYY-MM-DD'), {p_rate}, {s_rate}, CURRENT_TIMESTAMP);", language="sql")
 
     st.divider()
 
-    # FILA 3: SETTLEMENT / LIQUIDACIONES
+    # --- SECCIÓN: SETTLEMENT ---
     st.subheader("💳 Liquidaciones (Settlement)")
-    cc_liq = st.text_input("Número de Cuenta para Liquidación:", key="liq_cc")
-    m_usd = st.text_input("Monto USD (Dólares):", value="0", key="liq_usd")
-    m_ars = st.text_input("Monto ARS (Pesos):", value="0", key="liq_ars")
-    
-    col_v, col_m = st.columns(2)
-    if col_v.button("Update PRISMA (Visa/Amex)"):
+    cc_liq = st.text_input("Cuenta para Liquidación:", key="liq_cc")
+    m_usd = st.text_input("Monto USD:", value="0")
+    m_ars = st.text_input("Monto ARS:", value="0")
+    btn_p, btn_f = st.columns(2)
+    if btn_p.button("Update PRISMA (Visa/Amex)"):
         st.code(f"UPDATE RD_LIQUIDATIONS_USER_PRISMA SET LAST_LIQ_USD_AMOUNT = {m_usd}, LIQ_AUS_BALANCE = {m_ars} WHERE ACCOUNT IN ({cc_liq});", language="sql")
-    if col_m.button("Update FISERV (Mastercard)"):
+    if btn_f.button("Update FISERV (Master)"):
         st.code(f"UPDATE RD_LIQUIDATIONS_FISERV SET ACTUAL_DOLAR_BALANCE = {m_usd}, ARP_ACTUAL_BALANCE = {m_ars} WHERE ACCOUNT_NUMBER = {cc_liq};", language="sql")
 
 with tab3:
-    st.error("¡CUIDADO! Operaciones DELETE permanentes.")
-    
-    col_del1, col_del2 = st.columns(2)
-    
-    with col_del1:
-        st.subheader("❌ Borrar Débito (DNI)")
-        dni_input = st.text_input("DNI del cliente:", key="dni_del_db")
+    st.error("⚠️ ZONA DE ELIMINACIÓN PERMANENTE")
+    col_del_1, col_del_2 = st.columns(2)
+    with col_del_1:
+        st.subheader("❌ Débito (DNI)")
+        dni_del = st.text_input("DNI del cliente:", key="del_dni")
         if st.button("Generar Delete Débito"):
-            if dni_input:
-                st.code(generar_delete_debit(dni_input), language="sql")
-
-    with col_del2:
-        st.subheader("❌ Borrar Crédito (Cifrados)")
-        st.info("Pega la lista de números cifrados (con o sin comillas).")
-        cifrados_input = st.text_area("Números cifrados:", 
-                                     placeholder="JudBrY21pkPUKeyD5...\nIORProa3pkPUKeyD5...", 
-                                     height=150, 
-                                     key="cifrados_del_tc")
+            st.code(generar_delete_debit(dni_del), language="sql")
+    with col_del_2:
+        st.subheader("❌ Crédito (Cifrados)")
+        cif_del = st.text_area("Pegue números cifrados:", height=100)
         if st.button("Generar Delete Crédito"):
-            if cifrados_input:
-                st.code(generar_delete_credit_por_cifrado(cifrados_input), language="sql")
+            st.code(generar_delete_credit_por_cifrado(cif_del), language="sql")
