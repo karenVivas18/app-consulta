@@ -7,14 +7,8 @@ st.set_page_config(page_title="QA Automation Tool COTA", page_icon="🚀", layou
 
 # 2. Diccionarios de mapeo
 MAPEO_ESTADOS = {
-    "ACTIVA": 1, 
-    "INACTIVA": 2, 
-    "BAJA": 3, 
-    "NO INFORMADO": 4,
-    "SUSPENDIDO": 5, 
-    "RESTRINGIDA": 6, 
-    "PAUSADA": 7, 
-    "INHABILITADA": 8
+    "ACTIVA": 1, "INACTIVA": 2, "BAJA": 3, "NO INFORMADO": 4,
+    "SUSPENDIDO": 5, "RESTRINGIDA": 6, "PAUSADA": 7, "INHABILITADA": 8
 }
 
 # 3. Funciones de Lógica
@@ -83,6 +77,7 @@ st.title("🚀 QA Automation Tool COTA")
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 Trámites", "🔧 Varios", "⚠️ Eliminación", "📦 Dump Masivo", "📅 Settlement & Taxes"])
 
+# (Las pestañas 1, 2, 3 y 4 se mantienen con el código funcional previo)
 with tab1:
     input_text = st.text_area("Pegue el mensaje del chat aquí:", height=150)
     if st.button("Generar Queries"):
@@ -102,7 +97,7 @@ with tab2:
     st.divider()
     st.subheader("💳 Estado de Cuenta (ACCOUNTS_STATUS)")
     col_a1, col_a2 = st.columns(2)
-    acc_n = col_a1.text_input("Número de Cuenta:")
+    acc_n = col_a1.text_input("Número de Cuenta:", key="acc_flex")
     acc_s = col_a2.selectbox("Nuevo Estado:", list(MAPEO_ESTADOS.keys()))
     if st.button("Actualizar Cuenta"):
         st.code(f"UPDATE ACCOUNTS_STATUS SET STATUS_ID={MAPEO_ESTADOS[acc_s]}, UPDATED_AT=CURRENT_TIMESTAMP WHERE ACCOUNT_ID=(SELECT ID FROM CREDIT_ACCOUNTS WHERE \"NUMBER\"='{acc_n}');", language="sql")
@@ -122,10 +117,11 @@ with tab4:
     dump_in = st.text_area("Pegue INSERTS de M_DUMP_DEBIT_CARD:", height=200)
     if st.button("Procesar Dump"): st.code(procesar_dump_accounts(dump_in), language="sql")
 
+# --- AJUSTE FLEXIBLE EN TAB 5 ---
 with tab5:
     st.subheader("📅 Liquidación & Impuestos OP")
     c_s1, c_s2, c_s3 = st.columns(3)
-    acc_s = c_s1.text_input("Cuenta (10 dígitos):", placeholder="3142959686")
+    acc_s = c_s1.text_input("Cuenta (Cualquier longitud):", placeholder="Ej: 3142959686")
     port_s = c_s2.number_input("Portfolio:", 1, 9, 2)
     bran_s = c_s3.text_input("Branch:", "79")
     
@@ -149,7 +145,10 @@ with tab5:
 
     if st.button("🚀 Generar Bloque Settlement"):
         if acc_s:
-            p_acc, v_dig = acc_s[:9], acc_s[-1]
+            # LÓGICA FLEXIBLE: Toma todo menos el último para p_acc, y el último para v_dig
+            p_acc = acc_s[:-1] 
+            v_dig = acc_s[-1]
+            
             res = f"""-- UPDATE PRISMA
 UPDATE RD_LIQUIDATIONS_USER_PRISMA SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'), EXPIRATION_DATE_PREV=TO_DATE('{p_ex}','YYYY-MM-DD'), LIQ_DATE=TO_DATE('{c_cl}','YYYY-MM-DD'), EXPIRATION_DATE=TO_DATE('{c_ex}','YYYY-MM-DD'), PORTFOLIO={port_s+1} WHERE ACCOUNT={acc_s};
 UPDATE RD_SUMMARY_HEADER_PRISMA SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'), NEXT_CLOSE_DATE=TO_DATE('{n_cl}','YYYY-MM-DD'), NEXT_EXPIRATION_DATE=TO_DATE('{n_ex}','YYYY-MM-DD'), PORTFOLIO={port_s} WHERE ACCOUNT_NUMBER_ID={acc_s};
