@@ -1,144 +1,162 @@
 import streamlit as st
 import re
-from datetime import datetime, date
+from datetime import datetime
 
-# 1. CONFIGURACIÓN DE PÁGINA
+# 1. Configuración de la página
 st.set_page_config(page_title="QA Automation Tool COTA", page_icon="🚀", layout="wide")
 
-# --- TABLAS DE CONFIGURACIÓN (CALENDARIOS 2026) ---
-CALENDARIO_PRISMA = [
-    {"cierre": date(2026, 1, 8), "vto": date(2026, 1, 16), "prox_c": date(2026, 2, 5), "port": 4},
-    {"cierre": date(2026, 1, 15), "vto": date(2026, 1, 23), "prox_c": date(2026, 2, 12), "port": 3},
-    {"cierre": date(2026, 1, 22), "vto": date(2026, 2, 2), "prox_c": date(2026, 2, 19), "port": 2},
-    {"cierre": date(2026, 1, 29), "vto": date(2026, 2, 6), "prox_c": date(2026, 2, 26), "port": 1},
-    {"cierre": date(2026, 2, 5), "vto": date(2026, 2, 13), "prox_c": date(2026, 3, 5), "port": 4},
-    {"cierre": date(2026, 2, 12), "vto": date(2026, 2, 20), "prox_c": date(2026, 3, 12), "port": 3},
-    {"cierre": date(2026, 2, 19), "vto": date(2026, 3, 2), "prox_c": date(2026, 3, 19), "port": 2},
-    {"cierre": date(2026, 2, 26), "vto": date(2026, 3, 6), "prox_c": date(2026, 3, 26), "port": 1},
-    {"cierre": date(2026, 3, 5), "vto": date(2026, 3, 13), "prox_c": date(2026, 4, 9), "port": 4},
-    {"cierre": date(2026, 3, 12), "vto": date(2026, 3, 20), "prox_c": date(2026, 4, 16), "port": 3},
-    {"cierre": date(2026, 3, 19), "vto": date(2026, 4, 1), "prox_c": date(2026, 4, 23), "port": 2},
-    {"cierre": date(2026, 3, 26), "vto": date(2026, 4, 6), "prox_c": date(2026, 4, 30), "port": 1},
-]
-
-CALENDARIO_FISERV = [
-    {"cierre": date(2026, 1, 8), "vto": date(2026, 1, 16), "prox_c": date(2026, 2, 5), "port": 13},
-    {"cierre": date(2026, 1, 15), "vto": date(2026, 1, 23), "prox_c": date(2026, 2, 12), "port": 14},
-    {"cierre": date(2026, 1, 22), "vto": date(2026, 2, 2), "prox_c": date(2026, 2, 19), "port": 11},
-    {"cierre": date(2026, 1, 29), "vto": date(2026, 2, 6), "prox_c": date(2026, 2, 26), "port": 12},
-    {"cierre": date(2026, 2, 5), "vto": date(2026, 2, 13), "prox_c": date(2026, 3, 5), "port": 13},
-    {"cierre": date(2026, 2, 12), "vto": date(2026, 2, 20), "prox_c": date(2026, 3, 12), "port": 14},
-    {"cierre": date(2026, 2, 19), "vto": date(2026, 3, 2), "prox_c": date(2026, 3, 19), "port": 11},
-    {"cierre": date(2026, 2, 26), "vto": date(2026, 3, 6), "prox_c": date(2026, 3, 26), "port": 12},
-    {"cierre": date(2026, 3, 5), "vto": date(2026, 3, 13), "prox_c": date(2026, 4, 9), "port": 13},
-    {"cierre": date(2026, 3, 12), "vto": date(2026, 3, 20), "prox_c": date(2026, 4, 16), "port": 14},
-    {"cierre": date(2026, 3, 19), "vto": date(2026, 4, 1), "prox_c": date(2026, 4, 23), "port": 11},
-    {"cierre": date(2026, 3, 26), "vto": date(2026, 4, 6), "prox_c": date(2026, 4, 30), "port": 12},
-]
-
+# 2. Diccionarios de mapeo
 MAPEO_ESTADOS = {
-    "ACTIVA": 1, "INACTIVA": 2, "BAJA": 3, "NO INFORMADO": 4,
-    "SUSPENDIDO": 5, "RESTRINGIDA": 6, "PAUSADA": 7, "INHABILITADA": 8
+    "ACTIVA": 1, 
+    "INACTIVA": 2, 
+    "BAJA": 3, 
+    "NO INFORMADO": 4,
+    "SUSPENDIDO": 5, 
+    "RESTRINGIDA": 6, 
+    "PAUSADA": 7, 
+    "INHABILITADA": 8
 }
 
-# --- FUNCIONES ---
+# 3. Funciones de Lógica
 def generar_queries_tramites(texto):
     tipo = re.search(r"TIPO:\s*(TC|TD)", texto, re.I)
     tarjeta = re.search(r"TARJETA:\s*(\d{15,16})", texto, re.I)
     dni = re.search(r"DNI:\s*(\d+)", texto, re.I)
     cc = re.search(r"CC:\s*(\d+)", texto, re.I)
     accion = re.search(r"ACCION:\s*(.*)", texto, re.I)
-    if not (tipo and tarjeta and dni and accion): return None, None
-    t_tipo, t_num, t_dni, t_acc = tipo.group(1).upper(), tarjeta.group(1), dni.group(1), accion.group(1).upper()
-    t_bin, t_last4, t_cc = t_num[:6], t_num[-4:], cc.group(1) if cc else None
+
+    if not (tipo and tarjeta and dni and accion):
+        return None, None
+
+    t_tipo, t_num, t_dni = tipo.group(1).upper(), tarjeta.group(1), dni.group(1)
+    t_bin, t_last4 = t_num[:6], t_num[-4:]
+    t_cc = cc.group(1) if cc else None
+    t_acc = accion.group(1).upper()
+
     joins = "INNER JOIN DEBIT_CARDS DC ON C.ID = DC.CUSTOMER_ID INNER JOIN CARDS T ON DC.CARD_ID = T.ID" if t_tipo == "TD" else \
             "INNER JOIN CREDIT_ACCOUNTS CA ON C.ID = CA.CUSTOMER_ID INNER JOIN CREDIT_CARDS CC ON CA.ID = CC.ACCOUNT_ID INNER JOIN CARDS T ON CC.CARD_ID = T.ID"
+
     where_sql = f"WHERE C.DOCUMENT = '{t_dni}' AND T.BIN = '{t_bin}' AND T.LAST_DIGITS = '{t_last4}'"
     sql_final = ""
+
     for nombre, id_estado in MAPEO_ESTADOS.items():
         if nombre in t_acc:
-            sql_final += f"-- ESTADO {nombre}\nUPDATE CARDS_STATUS SET STATUS_ID = {id_estado}, UPDATED_AT = CURRENT_TIMESTAMP WHERE CARD_ID IN (SELECT T.ID FROM CUSTOMERS C {joins} {where_sql});\n\n"
-    if any(x in t_acc for x in ["VIRTUAL", "FALSE"]): sql_final += f"UPDATE CARDS SET PRINTED = 0 WHERE ID IN (SELECT T.ID FROM CUSTOMERS C {joins} {where_sql});\n"
-    elif any(x in t_acc for x in ["FISICA", "TRUE"]): sql_final += f"UPDATE CARDS SET PRINTED = 1 WHERE ID IN (SELECT T.ID FROM CUSTOMERS C {joins} {where_sql});\n"
-    mongo = f"db.temporary_limit_detail.deleteMany({{ \"document_number\": \"{t_dni}\", \"account_number\": \"{t_cc}\" }});" if t_cc and ("LIMPIAR" in t_acc or "AULITRAN" in t_acc) else ""
-    return sql_final, mongo
+            sql_final += f"-- CAMBIAR ESTADO A {nombre}\nUPDATE CARDS_STATUS SET STATUS_ID = {id_estado}, UPDATED_AT = CURRENT_TIMESTAMP WHERE CARD_ID IN (SELECT T.ID FROM CUSTOMERS C {joins} {where_sql});\n\n"
+    
+    if any(x in t_acc for x in ["VIRTUAL", "FALSE"]):
+        sql_final += f"-- DEJAR COMO VIRTUAL\nUPDATE CARDS SET PRINTED = 0 WHERE ID IN (SELECT T.ID FROM CUSTOMERS C {joins} {where_sql});\n"
+    elif any(x in t_acc for x in ["FISICA", "TRUE"]):
+        sql_final += f"-- DEJAR COMO FISICA\nUPDATE CARDS SET PRINTED = 1 WHERE ID IN (SELECT T.ID FROM CUSTOMERS C {joins} {where_sql});\n"
 
-# --- INTERFAZ ---
-tabs = st.tabs(["📝 Trámites", "🔧 Varios", "⚠️ Eliminación", "📦 Dump", "📅 Settlement & Taxes"])
+    mongo_final = f"db.temporary_limit_detail.deleteMany({{ \"document_number\": \"{t_dni}\", \"account_number\": \"{t_cc}\" }});" if t_cc and ("LIMPIAR_MONGO" in t_acc or "AULITRAN" in t_acc) else ""
+    return sql_final if sql_final else None, mongo_final
 
-with tabs[0]:
-    in_t = st.text_area("Mensaje del chat:", height=150)
-    if st.button("Generar Trámite"):
-        s, m = generar_queries_tramites(in_t)
-        if s: st.code(s, "sql")
-        if m: st.code(m, "javascript")
+def generar_delete_debit(dni):
+    return f"""-- DELETE DÉBITO COMPLETO (DNI: {dni})
+DELETE FROM DEBIT_CARDS_ACCOUNTS WHERE DEBIT_CARD_ID IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');
+DELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');
+DELETE FROM DEBIT_CARDS WHERE id IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');
+DELETE FROM CARDS WHERE id IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni}');"""
 
-with tabs[1]:
-    col1, col2, col3 = st.columns(3)
-    dni_v = col3.text_input("DNI Cliente:", key="dni_v")
-    if st.button("Update Nombre/Apellido"):
-        st.code(f"UPDATE CUSTOMERS SET NAME='{col1.text_input('Nombre:').upper()}', SURNAME='{col2.text_input('Apellido:').upper()}' WHERE DOCUMENT='{dni_v}';", "sql")
+def generar_delete_credit_por_cifrado(cifrados_str):
+    lineas = cifrados_str.replace("'", "").replace(",", " ").split()
+    cifrados = [c.strip() for c in lineas if c.strip()]
+    if not cifrados: return "-- ⚠️ Ingresa cifrados válidos."
+    lista_sql = ", ".join([f"'{c}'" for c in cifrados])
+    return f"""-- DELETE TC POR CIFRADO
+DELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ID FROM CARDS WHERE "NUMBER" IN ({lista_sql}));
+DELETE FROM CREDIT_CARDS WHERE CARD_ID IN (SELECT ID FROM CARDS WHERE "NUMBER" IN ({lista_sql}));
+DELETE FROM CARDS WHERE "NUMBER" IN ({lista_sql});"""
+
+def procesar_dump_accounts(texto):
+    registros = re.findall(r"VALUES\s*\((.*?)\)\s*;", texto, re.I)
+    queries = []
+    for reg in registros:
+        valores = [v.strip().strip("'") for v in reg.split(",")]
+        try:
+            queries.append(f"INSERT INTO M_DUMP_DEBIT_ACCOUNTS (MDUMP_ID, ACCOUNT_TYPE, ACCOUNT_NUMBER, ACCOUNT_STATUS, ACCOUNT_PREFERRED, ACCOUNT_PRIMARY) VALUES ({valores[0]}, '1', '{valores[16]}', '1', '0', '1');")
+        except IndexError: continue
+    return "\n".join(queries)
+
+# --- 4. INTERFAZ ---
+st.title("🚀 QA Automation Tool COTA")
+
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["📝 Trámites", "🔧 Varios", "⚠️ Eliminación", "📦 Dump Masivo", "📅 Settlement & Taxes"])
+
+with tab1:
+    input_text = st.text_area("Pegue el mensaje del chat aquí:", height=150)
+    if st.button("Generar Queries"):
+        sql, mongo = generar_queries_tramites(input_text)
+        if sql: st.code(sql, language="sql")
+        if mongo: st.code(mongo, language="javascript")
+
+with tab2:
+    st.subheader("👤 Cliente & Cuenta")
+    col_c1, col_c2, col_c3 = st.columns(3)
+    c_nom = col_c1.text_input("Nombre:")
+    c_ape = col_c2.text_input("Apellido:")
+    c_dni = col_c3.text_input("DNI:")
+    if st.button("Update Cliente"):
+        st.code(f"UPDATE CUSTOMERS SET NAME='{c_nom.upper()}', SURNAME='{c_ape.upper()}' WHERE DOCUMENT='{c_dni}';", language="sql")
+    
     st.divider()
-    acc_v = st.text_input("Nro Cuenta para Estado:", key="acc_v")
-    est_v = st.selectbox("Nuevo Estado:", list(MAPEO_ESTADOS.keys()))
+    st.subheader("💳 Estado de Cuenta (ACCOUNTS_STATUS)")
+    col_a1, col_a2 = st.columns(2)
+    acc_n = col_a1.text_input("Número de Cuenta:")
+    acc_s = col_a2.selectbox("Nuevo Estado:", list(MAPEO_ESTADOS.keys()))
     if st.button("Actualizar Cuenta"):
-        st.code(f"UPDATE ACCOUNTS_STATUS SET STATUS_ID={MAPEO_ESTADOS[est_v]}, UPDATED_AT=CURRENT_TIMESTAMP WHERE ACCOUNT_ID=(SELECT ID FROM CREDIT_ACCOUNTS WHERE \"NUMBER\"='{acc_v}');", "sql")
+        st.code(f"UPDATE ACCOUNTS_STATUS SET STATUS_ID={MAPEO_ESTADOS[acc_s]}, UPDATED_AT=CURRENT_TIMESTAMP WHERE ACCOUNT_ID=(SELECT ID FROM CREDIT_ACCOUNTS WHERE \"NUMBER\"='{acc_n}');", language="sql")
 
-with tabs[2]:
-    st.subheader("🗑️ Eliminación de Productos")
-    del_dni = st.text_input("DNI del Cliente a limpiar:")
-    
-    col_del1, col_del2 = st.columns(2)
-    if col_del1.button("Borrar Débito (DNI)"):
-        st.code(f"""DELETE FROM DEBIT_CARDS_ACCOUNTS WHERE DEBIT_CARD_ID IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{del_dni}');
-DELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{del_dni}');
-DELETE FROM DEBIT_CARDS WHERE id IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{del_dni}');
-DELETE FROM CARDS WHERE id IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{del_dni}');""", "sql")
-
-    if col_del2.button("Borrar Crédito (DNI)"):
-        st.code(f"""DELETE FROM CREDIT_CARDS WHERE ACCOUNT_ID IN (SELECT id FROM CREDIT_ACCOUNTS WHERE CUSTOMER_ID IN (SELECT id FROM CUSTOMERS WHERE DOCUMENT = '{del_dni}'));
-DELETE FROM ACCOUNTS_STATUS WHERE ACCOUNT_ID IN (SELECT id FROM CREDIT_ACCOUNTS WHERE CUSTOMER_ID IN (SELECT id FROM CUSTOMERS WHERE DOCUMENT = '{del_dni}'));
-DELETE FROM CREDIT_ACCOUNTS WHERE CUSTOMER_ID IN (SELECT id FROM CUSTOMERS WHERE DOCUMENT = '{del_dni}');""", "sql")
-
-with tabs[3]:
-    dump_in = st.text_area("Pega VALUES de M_DUMP_DEBIT_CARD:", height=150)
-    if st.button("Procesar"):
-        registros = re.findall(r"VALUES\s*\((.*?)\)\s*;", dump_in, re.I)
-        res = [f"INSERT INTO M_DUMP_DEBIT_ACCOUNTS (MDUMP_ID, ACCOUNT_TYPE, ACCOUNT_NUMBER, ACCOUNT_STATUS, ACCOUNT_PREFERRED, ACCOUNT_PRIMARY) VALUES ({r.split(',')[0].strip()}, '1', {r.split(',')[16].strip()}, '1', '0', '1');" for r in registros if len(r.split(',')) > 16]
-        st.code("\n".join(res), "sql")
-
-with tabs[4]:
-    st.subheader("📅 Liquidación Inteligente (Calendarios)")
+with tab3:
+    st.error("⚠️ ELIMINACIONES PERMANENTES")
     c1, c2 = st.columns(2)
-    marca = c1.selectbox("Marca:", ["PRISMA", "FISERV"])
-    acc_s = c2.text_input("Cuenta:")
-    
-    cal_ref = CALENDARIO_PRISMA if marca == "PRISMA" else CALENDARIO_FISERV
-    lista_cierres = [f["cierre"] for f in cal_ref]
-    c_selected = st.selectbox("Seleccionar Fecha de Cierre:", lista_cierres)
-    
-    reg = next(item for item in cal_ref if item["cierre"] == c_selected)
-    st.info(f"Sugerencia de Cartera: {reg['port']}")
+    with c1:
+        d_dni = st.text_input("DNI Débito:")
+        if st.button("Generar Delete DNI"): st.code(generar_delete_debit(d_dni), language="sql")
+    with c2:
+        d_cif = st.text_area("Cifrados Crédito:")
+        if st.button("Generar Delete CIF"): st.code(generar_delete_credit_por_cifrado(d_cif), language="sql")
 
+with tab4:
+    st.subheader("📦 Dump de Cuentas")
+    dump_in = st.text_area("Pegue INSERTS de M_DUMP_DEBIT_CARD:", height=200)
+    if st.button("Procesar Dump"): st.code(procesar_dump_accounts(dump_in), language="sql")
+
+with tab5:
+    st.subheader("📅 Liquidación & Impuestos OP")
+    c_s1, c_s2, c_s3 = st.columns(3)
+    acc_s = c_s1.text_input("Cuenta (10 dígitos):", placeholder="3142959686")
+    port_s = c_s2.number_input("Portfolio:", 1, 9, 2)
+    bran_s = c_s3.text_input("Branch:", "79")
+    
     f1, f2, f3 = st.columns(3)
-    curr_c = f1.date_input("Current Closing", reg["cierre"])
-    prev_c = f2.date_input("Previous Closing", date(2026, curr_c.month - 1, curr_c.day) if curr_c.month > 1 else date(2025, 12, curr_c.day))
-    next_c = f3.date_input("Next Closing", reg["prox_c"])
-
+    c_cl = f1.date_input("Current Closing (ID)")
+    p_cl = f2.date_input("Previous Closing")
+    n_cl = f3.date_input("Next Closing")
+    
     f4, f5, f6 = st.columns(3)
-    curr_e = f4.date_input("Current Expiration", reg["vto"])
-    prev_e = f5.date_input("Prev Expiration", date(2026, curr_e.month - 1, curr_e.day) if curr_e.month > 1 else date(2025, 12, curr_e.day))
-    next_e = f6.date_input("Next Expiration", date(2026, curr_e.month + 1, curr_e.day) if curr_e.month < 12 else date(2027, 1, curr_e.day))
+    c_ex = f4.date_input("Current Expiration")
+    p_ex = f5.date_input("Previous Expiration")
+    n_ex = f6.date_input("Next Expiration")
 
-    port_f = st.number_input("Portfolio:", value=reg["port"])
+    st.divider()
+    st_tax = st.toggle("¿Incluir Impuestos (RD_TAX_COMMISSION_DETAIL_OP)?")
+    if st_tax:
+        t1, t2, t3 = st.columns(3)
+        t_cod = t1.text_input("Tax Code:", "2015")
+        t_des = t2.text_input("Descripción:", "VISA ADIC - SIN FECHA 2")
+        t_amt = t3.text_input("Monto:", "0")
 
-    if st.button("🚀 Generar Settlement"):
-        suf = "PRISMA" if marca == "PRISMA" else "FISERV"
-        p_acc, v_dig = acc_s[:-1], acc_s[-1]
-        p_liq = port_f + 1 if suf == "PRISMA" else port_f
-        sql = f"""UPDATE CREDIT_ACCOUNTS SET PORTFOLIO_TYPE_ID = {port_f} WHERE "NUMBER" = '{acc_s}';
-UPDATE RD_LIQUIDATIONS_USER_{suf} SET CLOSING_DATE_LIQ=TO_DATE('{prev_c}','YYYY-MM-DD'), LIQ_DATE=TO_DATE('{curr_c}','YYYY-MM-DD'), EXPIRATION_DATE=TO_DATE('{curr_e}','YYYY-MM-DD'), PORTFOLIO={p_liq} WHERE ACCOUNT='{acc_s}';
-UPDATE RD_SUMMARY_HEADER_{suf} SET CLOSE_DATE_ID=TO_DATE('{curr_c}','YYYY-MM-DD'), NEXT_CLOSE_DATE=TO_DATE('{next_c}','YYYY-MM-DD') WHERE ACCOUNT_NUMBER_ID='{acc_s}';
-INSERT INTO USR_DATACOTAH.RD_LIQUIDATIONS_USER_{suf} (ACCOUNT_NUM, VERIFIER_DIGIT_ACCOUNT, ACCOUNT, BANK_CODE, PORTFOLIO, LIQ_DATE, CLOSING_DATE_LIQ, EXPIRATION_DATE, PROCESS_DATE) 
-VALUES ({p_acc}, {v_dig}, '{acc_s}', 7, {p_liq}, TO_DATE('{curr_c}','YYYY-MM-DD'), TO_DATE('{prev_c}','YYYY-MM-DD'), TO_DATE('{curr_e}','YYYY-MM-DD'), CURRENT_TIMESTAMP);"""
-        st.code(sql, "sql")
+    if st.button("🚀 Generar Bloque Settlement"):
+        if acc_s:
+            p_acc, v_dig = acc_s[:9], acc_s[-1]
+            res = f"""-- UPDATE PRISMA
+UPDATE RD_LIQUIDATIONS_USER_PRISMA SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'), EXPIRATION_DATE_PREV=TO_DATE('{p_ex}','YYYY-MM-DD'), LIQ_DATE=TO_DATE('{c_cl}','YYYY-MM-DD'), EXPIRATION_DATE=TO_DATE('{c_ex}','YYYY-MM-DD'), PORTFOLIO={port_s+1} WHERE ACCOUNT={acc_s};
+UPDATE RD_SUMMARY_HEADER_PRISMA SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'), NEXT_CLOSE_DATE=TO_DATE('{n_cl}','YYYY-MM-DD'), NEXT_EXPIRATION_DATE=TO_DATE('{n_ex}','YYYY-MM-DD'), PORTFOLIO={port_s} WHERE ACCOUNT_NUMBER_ID={acc_s};
+
+-- INSERT PRISMA
+INSERT INTO USR_DATACOTAH.RD_LIQUIDATIONS_USER_PRISMA (ACCOUNT_NUM, VERIFIER_DIGIT_ACCOUNT, ACCOUNT, BANK_CODE, PORTFOLIO, LIQ_DATE, CLOSING_DATE_LIQ, EXPIRATION_DATE, EXPIRATION_DATE_PREV, PROCESS_DATE) VALUES ({p_acc}, {v_dig}, {acc_s}, 7, {port_s+1}, TO_DATE('{c_cl}','YYYY-MM-DD'), TO_DATE('{p_cl}','YYYY-MM-DD'), TO_DATE('{c_ex}','YYYY-MM-DD'), TO_DATE('{p_ex}','YYYY-MM-DD'), TO_DATE('{c_cl}','YYYY-MM-DD'));
+INSERT INTO USR_DATACOTAH.RD_SUMMARY_HEADER_PRISMA (ACCOUNT_NUMBER_ID, FINANTIAL_ENTITY_CODE_ID, REGISTER_INTERNAL_CODE, BANK_CODE, CLOSE_DATE_ID, NEXT_CLOSE_DATE, NEXT_EXPIRATION_DATE, PORTFOLIO) VALUES ({acc_s}, 7, 10, '007', TO_DATE('{c_cl}','YYYY-MM-DD'), TO_DATE('{n_cl}','YYYY-MM-DD'), TO_DATE('{n_ex}','YYYY-MM-DD'), {port_s});"""
+            st.code(res, language="sql")
+            if st_tax:
+                st.code(f"INSERT INTO RD_TAX_COMMISSION_DETAIL_OP (ENTITY_CODE, FINANTIAL_ENTITY_CODE, CREDIT_ACCOUNT, BRANCH_OFFICE, TAX_CODE, TAX_DESCRIPTION, AMOUNT, CURRENCY, CLOSE_DATE, CREATE_DATE) VALUES ('007', '007', '{acc_s}', '{bran_s}', '{t_cod}', '{t_des}', {t_amt}, 'ARS', TO_DATE('{c_cl}','YYYY-MM-DD'), CURRENT_TIMESTAMP);", language="sql")
