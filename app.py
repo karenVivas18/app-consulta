@@ -127,13 +127,13 @@ UPDATE RD_SUMMARY_HEADER_{suf} SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'),
 
 with tabs[5]:
     st.subheader("💰 Simulator: Calculadora de Deuda Dinámica")
-    st.info("Configura la base de la liquidación y suma/resta movimientos para ver el resultado final de la API.")
+    st.info("Configura la base y los movimientos para predecir el resultado de la API.")
     
     # --- CONFIGURACIÓN INICIAL ---
     col_acc1, col_acc2, col_acc3 = st.columns(3)
     marca_sim = col_acc1.selectbox("Marca Tarjeta:", ["PRISMA", "FISERV"], key="sim_marca")
     acc_sim = col_acc2.text_input("Número de Cuenta:", value="413864350", key="sim_acc")
-    cotiz_v = col_acc3.number_input("Cotización Dólar Venta:", value=2150.0, step=10.0)
+    cotiz_v = col_acc3.number_input("Cotización Dólar Venta:", value=2150.0, step=1.0)
 
     st.divider()
 
@@ -142,8 +142,8 @@ with tabs[5]:
 
     with col_izq:
         st.markdown("### 🏦 1. Valores Base (Settlement)")
-        b_pesos = st.number_input("Deuda Pesos Base:", value=55000.0, step=100.0)
-        b_dolar = st.number_input("Deuda Dólares Base:", value=34.0, step=10.0)
+        b_pesos = st.number_input("Deuda Pesos Base:", value=55000.0)
+        b_dolar = st.number_input("Deuda Dólares Base:", value=34.0)
         
         if st.button("🚀 Generar SQL Update Base"):
             if marca_sim == "FISERV":
@@ -153,58 +153,68 @@ with tabs[5]:
             st.code(sql_b, "sql")
 
     with col_der:
-        st.markdown("### 💸 2. Movimiento (Pagos/Consumos)")
-        m_monto = st.number_input("Monto del Movimiento:", value=0.0, step=100.0)
+        st.markdown("### 💸 2. Movimiento & Fecha de Cierre")
+        m_monto = st.number_input("Monto del Movimiento:", value=0.0)
         m_tipo = st.selectbox("Operación:", ["PAGO (Resta Deuda)", "CONSUMO (Suma Deuda)"])
         m_moneda = st.selectbox("Moneda:", ["ARS", "USD"])
         
+        # AQUÍ ESTÁ EL CAMBIO: Se pide el Close Date para los Inserts
+        f_cie_mov = st.date_input("Fecha Cierre Destino (Close Date):", value=date(2026, 3, 19))
+        
         if st.button("🚀 Generar SQL Insert Movimiento"):
             ent_cod = "007" if marca_sim == "PRISMA" else "027"
+            # Formateamos la fecha seleccionada para el SQL
+            f_str = f_cie_mov.strftime('%d/%m/%Y')
+            f_iso = f_cie_mov.strftime('%Y-%m-%d')
+            
             if "PAGO" in m_tipo:
-                sql_m = f"INSERT INTO PAYMENTS_OP_LIGHT (ID, ENTITY_CODE, CREDIT_ACCOUNT, AMOUNT1, CURRENCY, ORIGIN_TRANSACTION) VALUES ((SELECT MAX(ID)+1 FROM PAYMENTS_OP_LIGHT), '{ent_cod}', '{acc_sim}', {m_monto}, '{m_moneda}', '{marca_sim}');"
+                sql_m = f"""-- INSERT PAGO CON CLOSE_DATE DINÁMICO
+INSERT INTO PAYMENTS_OP_LIGHT (ID,ENTITY_CODE,FINANTIAL_ENTITY_CODE,CREDIT_ACCOUNT,BRANCH_OFFICE,TRANSACTION_DATE,OPERATION_DATE,EXTERNAL_PAYMENT_CODE,AMOUNT1,CURRENCY,PORTFOLIO,CLOSE_DATE,CANAL,ORIGIN_TRANSACTION,CREATE_DATE,OPERATION_ID)
+VALUES((SELECT MAX(ID) +1 FROM PAYMENTS_OP_LIGHT),'{ent_cod}','{ent_cod}','{acc_sim}','040',to_date('{f_str}','DD/MM/RRRR'),to_date('{f_str}','DD/MM/RRRR'),'2500','{m_monto}','{m_moneda}','1',to_date('{f_str}','DD/MM/RRRR'),null,'{marca_sim}',to_timestamp('{f_str}','DD/MM/RRRR'),SYS_GUID());"""
             else:
-                sql_m = f"INSERT INTO PURCHASE_TC_OP_LIGHT (AMOUNT, CURRENCY, ACCOUNT_NUMBER, ORIGIN_TRANSACTION) VALUES ({m_monto}, '{m_moneda}', '{acc_sim}', '{marca_sim}');"
+                sql_m = f"""-- INSERT CONSUMO CON CLOSE_DATE DINÁMICO
+INSERT INTO PURCHASE_TC_OP_LIGHT (CARD_NUMBER, PURCHASE_DATE, MERCHANT_NAME, AMOUNT, CURRENCY, CLOSE_DATE, ORIGIN_TRANSACTION, ACCOUNT_NUMBER, PROCESS_DATE) 
+VALUES ('000000', CURRENT_DATE, 'MOVIMIENTO QA COTA', {m_monto}, '{m_moneda}', to_date('{f_str}','DD/MM/RRRR'), '{marca_sim}', '{acc_sim}', CURRENT_TIMESTAMP);"""
             st.code(sql_m, "sql")
 
     st.divider()
 
     # --- LÓGICA DE CÁLCULO ---
     factor = -1 if "PAGO" in m_tipo else 1
-    
-    # Valores Finales
     final_p = b_pesos + (m_monto if m_moneda == "ARS" else 0) * factor
     final_d = b_dolar + (m_monto if m_moneda == "USD" else 0) * factor
-    
-    # Pesificación
     total_pesificado = final_p + (final_d * cotiz_v)
 
     # --- RESULTADOS FINALES ---
-    st.markdown("### 🎯 Resultado Final en API (Actual Debt)")
+    st.markdown("### 🎯 Resultado Esperado en API (Actual Debt)")
     
-    # Fila de Pesos
-    c1, c2 = st.columns(2)
-    c1.metric("Pesos Base", f"{b_pesos:,.2f}")
-    c2.metric("pesos_debt (FINAL)", f"{final_p:,.2f}", delta=f"{(final_p - b_pesos):,.2f}")
+    res_p1, res_p2 = st.columns(2)
+    res_p1.metric("DEUDA PESOS BASE", f"{b_pesos:,.2f} ARS")
+    res_p2.metric("DEUDA PESOS FINAL (pesos_debt)", f"{final_p:,.2f} ARS", delta=f"{(final_p - b_pesos):,.2f}")
 
-    # Fila de Dólares
-    c3, c4 = st.columns(2)
-    c3.metric("Dólares Base", f"{b_dolar:,.2f}")
-    c4.metric("dollar_debt (FINAL)", f"{final_d:,.2f}", delta=f"{(final_d - b_dolar):,.2f}")
+    res_d1, res_d2 = st.columns(2)
+    res_d1.metric("DEUDA DÓLARES BASE", f"{b_dolar:,.2f} USD")
+    res_d2.metric("DEUDA DÓLARES FINAL (dollar_debt)", f"{final_d:,.2f} USD", delta=f"{(final_d - b_dolar):,.2f}")
 
     st.divider()
     
-    # Totales Finales
-    res_a, res_b = st.columns(2)
-    with res_a:
-        st.subheader("Total Deuda Pesos")
+    final_a, final_b = st.columns(2)
+    with final_a:
+        st.subheader("TOTAL DEUDA PESOS")
         st.title(f"{total_pesificado:,.2f} ARS")
         st.caption(f"Cálculo: {final_p:,.2f} + ({final_d:,.2f} USD * {cotiz_v})")
         
-    with res_b:
-        st.subheader("Total Deuda Dólares")
+    with final_b:
+        st.subheader("TOTAL DEUDA DÓLARES")
         st.title(f"{final_d:,.2f} USD")
-        st.caption("Mantiene el valor de dollar_debt")
-        
+
+    # Botón para la cotización
+    if st.button("💵 Generar Rate Dólar (Para esta Expiration)"):
+        f_exp = f_cie_mov.strftime('%Y-%m-%d')
+        sql_rate = f"""DELETE FROM DOLLAR_EXCHANGE_RATES WHERE DATE_RATE = TO_DATE('{f_exp}','YYYY-MM-DD');
+INSERT INTO DOLLAR_EXCHANGE_RATES (DATE_RATE, PURCHASE, SELLING, PROCESS_DATE) VALUES (TO_DATE('{f_exp}','YYYY-MM-DD'), {cotiz_v - 50}, {cotiz_v}, CURRENT_TIMESTAMP);"""
+        st.code(sql_rate, "sql")
+
 with tabs[6]:
     st.subheader("📋 Protocolo de Mensaje")
     st.code("""SOLICITUD DE DEUDA QA
