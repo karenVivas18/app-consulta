@@ -126,37 +126,81 @@ UPDATE RD_SUMMARY_HEADER_{suf} SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'),
         st.code(sql, "sql")
 
 with tabs[5]:
-    st.subheader("💰 Calculadora Dinámica de Deuda")
+    st.subheader("💰 Simulator: Generador de Deuda & Queries")
     
-    # Inputs Base
+    # --- CONFIGURACIÓN DE CUENTA & MARCA ---
+    col_acc1, col_acc2, col_acc3 = st.columns(3)
+    marca_sim = col_acc1.selectbox("Marca Tarjeta:", ["PRISMA", "FISERV"], key="sim_marca")
+    acc_sim = col_acc2.text_input("Número de Cuenta:", value="413864350", key="sim_acc")
+    port_sim = col_acc3.number_input("Portfolio:", value=2, key="sim_port")
+
+    st.divider()
+
+    # --- 1. BASE DE DEUDA (SETTLEMENT) ---
+    st.markdown("### 1. Base de Deuda (Update en Settlement)")
     c_b1, c_b2, c_b3 = st.columns(3)
-    b_pesos = c_b1.number_input("Deuda Base Pesos:", value=55000.0)
-    b_dolar = c_b2.number_input("Deuda Base Dólares:", value=34.0)
-    cotiz = c_b3.number_input("Cotización Dólar (Venta):", value=2150.0)
-    
-    # Movimientos
-    st.write("---")
-    st.markdown("**Movimientos On-line (Afectan la API)**")
+    b_pesos = c_b1.number_input("Pesos Base (ARS):", value=55000.0)
+    b_dolar = c_b2.number_input("Dólares Base (USD):", value=34.0)
+    cotiz_v = c_b3.number_input("Cotización Dólar Venta:", value=2150.0)
+
+    if st.button("🚀 Generar Update de Base"):
+        if marca_sim == "FISERV":
+            sql_base = f"""-- FISERV: UPDATE BASE DE DEUDA
+UPDATE RD_LIQUIDATIONS_FISERV 
+SET ACTUAL_DOLAR_BALANCE = {b_dolar}, ARP_ACTUAL_BALANCE = {b_pesos} 
+WHERE ACCOUNT_NUMBER = {acc_sim};"""
+        else:
+            sql_base = f"""-- PRISMA: UPDATE BASE DE DEUDA
+UPDATE RD_LIQUIDATIONS_USER_PRISMA 
+SET LAST_LIQ_USD_AMOUNT = {b_dolar}, LIQ_AUS_BALANCE = {b_pesos} 
+WHERE ACCOUNT = {acc_sim};"""
+        st.code(sql_base, "sql")
+
+    st.divider()
+
+    # --- 2. MOVIMIENTOS (INSERTS) ---
+    st.markdown("### 2. Movimientos On-line (Afectan saldo actual)")
     m_c1, m_c2, m_c3 = st.columns(3)
     m_monto = m_c1.number_input("Monto Movimiento:", value=0.0)
-    m_tipo = m_c2.selectbox("Acción:", ["PAGO (Resta)", "CONSUMO (Suma)"])
-    m_moneda = m_c3.selectbox("Moneda Mov:", ["ARS", "USD"])
+    m_tipo = m_c2.selectbox("Tipo de Operación:", ["PAGO (Resta Deuda)", "CONSUMO (Suma Deuda)"])
+    m_moneda = m_c3.selectbox("Moneda del Movimiento:", ["ARS", "USD"])
     
-    # Lógica de cálculo
-    final_p = b_pesos + (m_monto if m_tipo == "CONSUMO (Suma)" and m_moneda == "ARS" else 0) - (m_monto if m_tipo == "PAGO (Resta)" and m_moneda == "ARS" else 0)
-    final_d = b_dolar + (m_monto if m_tipo == "CONSUMO (Suma)" and m_moneda == "USD" else 0) - (m_monto if m_tipo == "PAGO (Resta)" and m_moneda == "USD" else 0)
+    f_cie_mov = st.date_input("Fecha de Cierre Destino:", value=date(2026, 2, 19))
+
+    if st.button("🚀 Generar Insert de Movimiento"):
+        # Lógica de Entidades para Inserts
+        ent_cod = "007" if marca_sim == "PRISMA" else "027"
+        ori_txt = marca_sim
+        
+        if "PAGO" in m_tipo:
+            sql_mov = f"""-- INSERT PAGO (DISMINUYE DEUDA)
+INSERT INTO PAYMENTS_OP_LIGHT (ID, ENTITY_CODE, FINANTIAL_ENTITY_CODE, CREDIT_ACCOUNT, BRANCH_OFFICE, TRANSACTION_DATE, OPERATION_DATE, EXTERNAL_PAYMENT_CODE, AMOUNT1, CURRENCY, PORTFOLIO, CLOSE_DATE, ORIGIN_TRANSACTION, CREATE_DATE, OPERATION_ID) 
+VALUES ((SELECT MAX(ID)+1 FROM PAYMENTS_OP_LIGHT), '{ent_cod}', '{ent_cod}', '{acc_sim}', '040', CURRENT_DATE, CURRENT_DATE, '2500', {m_monto}, '{m_moneda}', {port_sim}, TO_DATE('{f_cie_mov}','YYYY-MM-DD'), '{ori_txt}', CURRENT_TIMESTAMP, SYS_GUID());"""
+        else:
+            sql_mov = f"""-- INSERT CONSUMO (AUMENTA DEUDA)
+INSERT INTO PURCHASE_TC_OP_LIGHT (CARD_NUMBER, PURCHASE_DATE, MERCHANT_NAME, AMOUNT, CURRENCY, CLOSE_DATE, ORIGIN_TRANSACTION, ACCOUNT_NUMBER, PROCESS_DATE) 
+VALUES ('000000', CURRENT_DATE, 'MOVIMIENTO QA COTA', {m_monto}, '{m_moneda}', TO_DATE('{f_cie_mov}','YYYY-MM-DD'), '{ori_txt}', '{acc_sim}', CURRENT_TIMESTAMP);"""
+        st.code(sql_mov, "sql")
+
+    st.divider()
+
+    # --- 3. RESULTADOS ESPERADOS ---
+    st.markdown("### 🎯 Resultado Final en API (Actual Debt)")
     
-    total_pesificado = final_p + (final_d * cotiz)
+    # Lógica de cálculo pesificado
+    mod_p = (m_monto if m_moneda == "ARS" else 0) * (1 if "CONSUMO" in m_tipo else -1)
+    mod_d = (m_monto if m_moneda == "USD" else 0) * (1 if "CONSUMO" in m_tipo else -1)
     
-    # Cuadro de resultados
-    st.success("### 📊 Resultado esperado en la API")
+    final_p = b_pesos + mod_p
+    final_d = b_dolar + mod_d
+    total_pesificado = final_p + (final_d * cotiz_v)
+
     res1, res2, res3 = st.columns(3)
     res1.metric("pesos_debt", f"{final_p:,.2f}")
     res2.metric("dollar_debt", f"{final_d:,.2f}")
-    res3.metric("TOTAL DEUDA (ARS)", f"{total_pesificado:,.2f}")
-    
-    st.info(f"💡 El total de deuda en pesos es: **{final_p:,.2f} + ({final_d:,.2f} * {cotiz}) = {total_pesificado:,.2f}**")
+    res3.metric("TOTAL DEUDA (Pesificado)", f"{total_pesificado:,.2f} ARS")
 
+    st.info(f"💡 **Cálculo:** {final_p:,.2f} (pesos) + ({final_d:,.2f} usd * {cotiz_v} cotiz) = {total_pesificado:,.2f}")
 with tabs[6]:
     st.subheader("📋 Protocolo de Mensaje")
     st.code("""SOLICITUD DE DEUDA QA
