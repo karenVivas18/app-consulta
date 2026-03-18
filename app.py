@@ -223,60 +223,63 @@ with tabs[3]:
     if st.button("Procesar Dump"): st.code(re.sub(r"VALUES\s*\((.*?)\)\s*;", lambda m: f"INSERT INTO M_DUMP_DEBIT_ACCOUNTS (MDUMP_ID, ACCOUNT_TYPE, ACCOUNT_NUMBER, ACCOUNT_STATUS, ACCOUNT_PREFERRED, ACCOUNT_PRIMARY) VALUES ({m.group(1).split(',')[0].strip()}, '1', {m.group(1).split(',')[16].strip()}, '1', '0', '1');", dump_in, flags=re.I), "sql")
 
 with tabs[4]:
-    st.subheader("📅 Liquidación & Cotización")
+    st.subheader("🚀 Generador de SQL: Settlement & Dólar")
     
-    col_m1, col_m2 = st.columns(2)
-    marca = col_m1.selectbox("Marca:", list(DATA_MASTER.keys()), key="set_marca")
-    acc_s = col_m2.text_input("Cuenta:", placeholder="Ej: 429214619", key="set_acc")
+    col1, col2 = st.columns(2)
+    marca = col1.selectbox("Marca:", list(DATA_MASTER.keys()), key="set_marca")
+    acc_s = col2.text_input("Número de Cuenta:", placeholder="429214619", key="set_acc")
     
     cal_ref = DATA_MASTER[marca]
-    c_selected = st.selectbox("Seleccionar Cierre:", 
+    c_selected = st.selectbox("Fecha de Cierre:", 
                               options=[f["cierre"] for f in cal_ref], 
                               format_func=lambda x: x.strftime("%d/%m/%Y"),
                               key="set_close")
     
-    # Buscar el registro correspondiente
+    # Buscamos los datos de la fecha seleccionada
     reg = next(item for item in cal_ref if item["cierre"] == c_selected)
     
-    # Edición manual de fechas por si hay feriados
-    f1, f2, f3 = st.columns(3)
-    c_cl = f1.date_input("Current Closing", reg["cierre"])
-    p_cl = f2.date_input("Previous Closing", reg["prev_c"])
-    n_cl = f3.date_input("Next Closing", reg["next_c"])
+    # Inputs de fechas (editables)
+    f_c1, f_c2, f_c3 = st.columns(3)
+    c_cl = f_c1.date_input("Cierre Actual", reg["cierre"])
+    p_cl = f_c2.date_input("Cierre Anterior", reg["prev_c"])
+    n_cl = f_c3.date_input("Próximo Cierre", reg["next_c"])
     
-    f4, f5, f6 = st.columns(3)
-    c_ex = f4.date_input("Current Expiration", reg["curr_e"])
-    p_ex = f5.date_input("Prev Expiration", reg["prev_e"])
-    n_ex = f6.date_input("Next Expiration", reg["next_e"])
+    f_e1, f_e2, f_e3 = st.columns(3)
+    c_ex = f_e1.date_input("Vto Actual", reg["curr_e"])
+    p_ex = f_e2.date_input("Vto Anterior", reg["prev_e"])
+    n_ex = f_e3.date_input("Próximo Vto", reg["next_e"])
     
     st.divider()
     
-    st.subheader("💵 Deuda Base & Dólar")
-    d_col1, d_col2 = st.columns(2)
-    base_p = d_col1.number_input("Pesos Base:", value=0.0)
-    base_d = d_col2.number_input("Dólares Base:", value=0.0)
+    # Montos y Dólar
+    st.subheader("💰 Datos de Deuda y Tipo de Cambio")
+    m_col1, m_col2 = st.columns(2)
+    base_p = m_col1.number_input("Monto Pesos (LIQ_AUS_BALANCE):", value=0.0)
+    base_d = m_col2.number_input("Monto Dólares (LAST_LIQ_USD_AMOUNT):", value=0.0)
     
-    x_col1, x_col2 = st.columns(2)
-    buy_rate = x_col1.number_input("Dólar Compra:", value=2100.0)
-    sell_rate = x_col2.number_input("Dólar Venta:", value=2150.0)
+    d_col1, d_col2 = st.columns(2)
+    buy_rate = d_col1.number_input("Dólar Compra:", value=1470.0)
+    sell_rate = d_col2.number_input("Dólar Venta:", value=1420.0)
 
-    if st.button("🚀 Generar Bloque Settlement Completo"):
+    if st.button("Generar Scripts SQL"):
         if not acc_s:
-            st.error("Ingresa una cuenta.")
+            st.warning("⚠️ Por favor ingresa una cuenta.")
         else:
-            # Determinación de Portafolios
+            # Lógica de Portafolios
             marca_key = "PRISMA" if "PRISMA" in marca else "FISERV"
-            id_referencia = reg["p_maestro"] 
+            semana_id = reg["p_maestro"]
             
-            p_procesadora = MAPEO_PORTFOLIOS[id_referencia][marca_key] # El código de ellos
-            p_maestro = MAPEO_PORTFOLIOS[id_referencia]["MAESTRO"]      # El código nuestro
+            p_procesadora = TABLA_PORTFOLIOS[semana_id][marca_key]
+            p_maestro = TABLA_PORTFOLIOS[semana_id]["MAESTRO"]
+            desc_semana = TABLA_PORTFOLIOS[semana_id]["DESC"]
             
-            sql = f"""-- 1. COTIZACION DÓLAR PARA EXPIRATION
+            sql_final = f"""-- COTIZACION DÓLAR PARA VENCIMIENTO {c_ex}
 DELETE FROM DOLLAR_EXCHANGE_RATES WHERE DATE_RATE = TO_DATE('{c_ex}','YYYY-MM-DD');
 INSERT INTO DOLLAR_EXCHANGE_RATES (DATE_RATE, PURCHASE, SELLING, PROCESS_DATE) 
 VALUES (TO_DATE('{c_ex}','YYYY-MM-DD'), {buy_rate}, {sell_rate}, CURRENT_TIMESTAMP);
 
--- 2. SETTLEMENT BASE (Procesadora ID: {p_procesadora})
+-- ACTUALIZACIÓN DE SETTLEMENT ({desc_semana})
+-- Tabla Liquidaciones (Usa ID Procesadora: {p_procesadora})
 UPDATE RD_LIQUIDATIONS_USER_{marca_key} 
 SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'), 
     LIQ_DATE=TO_DATE('{c_cl}','YYYY-MM-DD'), 
@@ -286,95 +289,19 @@ SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'),
     LAST_LIQ_USD_AMOUNT={base_d} 
 WHERE ACCOUNT='{acc_s}';
 
--- 3. SUMMARY HEADER (Maestro ID: {p_maestro})
+-- Tabla Resumen Cabecera (Usa ID Maestro: {p_maestro})
 UPDATE RD_SUMMARY_HEADER_{marca_key} 
 SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'), 
     NEXT_CLOSE_DATE=TO_DATE('{n_cl}','YYYY-MM-DD'), 
     PORTFOLIO={p_maestro} 
 WHERE ACCOUNT_NUMBER_ID='{acc_s}';
 
--- 4. MAESTRO DE CUENTAS (Maestro ID: {p_maestro})
+-- Tabla Maestro de Cuentas (Usa ID Maestro: {p_maestro})
 UPDATE CREDIT_ACCOUNTS 
 SET PORTFOLIO_TYPE_ID = {p_maestro} 
 WHERE "NUMBER" = '{acc_s}';"""
             
-            st.code(sql, "sql")
-    st.subheader("📅 Liquidación & Cotización")
-    col_m1, col_m2 = st.columns(2)
-    marca = col_m1.selectbox("Marca:", list(DATA_MASTER.keys()), key="set_marca")
-    acc_s = col_m2.text_input("Cuenta (Settlement):", placeholder="Ej: 413864350", key="set_acc")
-    
-    cal_ref = DATA_MASTER[marca]
-    c_selected = st.selectbox("Cierre (Current Closing):", 
-                              options=[f["cierre"] for f in cal_ref], 
-                              format_func=lambda x: x.strftime("%d/%m/%Y"),
-                              key="set_close")
-    
-    reg = next(item for item in cal_ref if item["cierre"] == c_selected)
-    
-    # Visualización de Fechas
-    f1, f2, f3 = st.columns(3)
-    c_cl = f1.date_input("Current Closing", reg["cierre"])
-    p_cl = f2.date_input("Previous Closing", reg["prev_c"])
-    n_cl = f3.date_input("Next Closing", reg["next_c"])
-    
-    f4, f5, f6 = st.columns(3)
-    c_ex = f4.date_input("Current Expiration", reg["curr_e"])
-    p_ex = f5.date_input("Prev Expiration", reg["prev_e"])
-    n_ex = f6.date_input("Next Expiration", reg["next_e"])
-    
-    st.divider()
-    
-    # Valores de Deuda y Cotización
-    st.subheader("💵 Configuración de Deuda Base & Dólar")
-    d_col1, d_col2 = st.columns(2)
-    base_p = d_col1.number_input("Pesos Base (LIQ_AUS_BALANCE):", value=0.0)
-    base_d = d_col2.number_input("Dólares Base (LAST_LIQ_USD_AMOUNT):", value=0.0)
-    
-    x_col1, x_col2 = st.columns(2)
-    buy_rate = x_col1.number_input("Buying Rate (Compra):", value=2100.0)
-    sell_rate = x_col2.number_input("Selling Rate (Venta):", value=2150.0)
-
-    if st.button("🚀 Generar Bloque Settlement + Dólar"):
-    if not acc_s:
-        st.error("Por favor ingresa un número de cuenta.")
-    else:
-        # 1. Detectar Marca
-        marca_key = "PRISMA" if "PRISMA" in marca else "FISERV"
-        
-        # 2. Obtener IDs de Portafolio
-        id_semana = reg["p_maestro"] # Del 1 al 4 según la fecha
-        p_procesadora = MAPEO_PORTFOLIOS[id_semana][marca_key] # Ej: 3
-        p_nuestro = MAPEO_PORTFOLIOS[id_semana]["MAESTRO"]     # Ej: 2
-        
-        sql = f"""-- 1. COTIZACION DÓLAR
-DELETE FROM DOLLAR_EXCHANGE_RATES WHERE DATE_RATE = TO_DATE('{c_ex}','YYYY-MM-DD');
-INSERT INTO DOLLAR_EXCHANGE_RATES (DATE_RATE, PURCHASE, SELLING, PROCESS_DATE) 
-VALUES (TO_DATE('{c_ex}','YYYY-MM-DD'), {buy_rate}, {sell_rate}, CURRENT_TIMESTAMP);
-
--- 2. SETTLEMENT PROCESADORA (Usa código procesadora: {p_procesadora})
-UPDATE RD_LIQUIDATIONS_USER_{marca_key} 
-SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'), 
-    LIQ_DATE=TO_DATE('{c_cl}','YYYY-MM-DD'), 
-    EXPIRATION_DATE=TO_DATE('{c_ex}','YYYY-MM-DD'), 
-    PORTFOLIO={p_procesadora}, 
-    LIQ_AUS_BALANCE={base_p}, 
-    LAST_LIQ_USD_AMOUNT={base_d} 
-WHERE ACCOUNT='{acc_s}';
-
--- 3. SUMMARY HEADER (Usa nuestro código maestro: {p_nuestro})
-UPDATE RD_SUMMARY_HEADER_{marca_key} 
-SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'), 
-    NEXT_CLOSE_DATE=TO_DATE('{n_cl}','YYYY-MM-DD'), 
-    PORTFOLIO={p_nuestro} 
-WHERE ACCOUNT_NUMBER_ID='{acc_s}';
-
--- 4. MAESTRO DE CUENTAS (Usa nuestro código maestro: {p_nuestro})
-UPDATE CREDIT_ACCOUNTS 
-SET PORTFOLIO_TYPE_ID = {p_nuestro} 
-WHERE "NUMBER" = '{acc_s}';"""
-        
-        st.code(sql, "sql")
+            st.code(sql_final, "sql")
 with tabs[5]:
     st.subheader("💰 Simulator: Calculadora de Deuda Dinámica")
     st.info("Configura la base y los movimientos para predecir el resultado de la API.")
