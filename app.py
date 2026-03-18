@@ -224,6 +224,82 @@ with tabs[3]:
 
 with tabs[4]:
     st.subheader("📅 Liquidación & Cotización")
+    
+    col_m1, col_m2 = st.columns(2)
+    marca = col_m1.selectbox("Marca:", list(DATA_MASTER.keys()), key="set_marca")
+    acc_s = col_m2.text_input("Cuenta:", placeholder="Ej: 429214619", key="set_acc")
+    
+    cal_ref = DATA_MASTER[marca]
+    c_selected = st.selectbox("Seleccionar Cierre:", 
+                              options=[f["cierre"] for f in cal_ref], 
+                              format_func=lambda x: x.strftime("%d/%m/%Y"),
+                              key="set_close")
+    
+    # Buscar el registro correspondiente
+    reg = next(item for item in cal_ref if item["cierre"] == c_selected)
+    
+    # Edición manual de fechas por si hay feriados
+    f1, f2, f3 = st.columns(3)
+    c_cl = f1.date_input("Current Closing", reg["cierre"])
+    p_cl = f2.date_input("Previous Closing", reg["prev_c"])
+    n_cl = f3.date_input("Next Closing", reg["next_c"])
+    
+    f4, f5, f6 = st.columns(3)
+    c_ex = f4.date_input("Current Expiration", reg["curr_e"])
+    p_ex = f5.date_input("Prev Expiration", reg["prev_e"])
+    n_ex = f6.date_input("Next Expiration", reg["next_e"])
+    
+    st.divider()
+    
+    st.subheader("💵 Deuda Base & Dólar")
+    d_col1, d_col2 = st.columns(2)
+    base_p = d_col1.number_input("Pesos Base:", value=0.0)
+    base_d = d_col2.number_input("Dólares Base:", value=0.0)
+    
+    x_col1, x_col2 = st.columns(2)
+    buy_rate = x_col1.number_input("Dólar Compra:", value=2100.0)
+    sell_rate = x_col2.number_input("Dólar Venta:", value=2150.0)
+
+    if st.button("🚀 Generar Bloque Settlement Completo"):
+        if not acc_s:
+            st.error("Ingresa una cuenta.")
+        else:
+            # Determinación de Portafolios
+            marca_key = "PRISMA" if "PRISMA" in marca else "FISERV"
+            id_referencia = reg["p_maestro"] 
+            
+            p_procesadora = MAPEO_PORTFOLIOS[id_referencia][marca_key] # El código de ellos
+            p_maestro = MAPEO_PORTFOLIOS[id_referencia]["MAESTRO"]      # El código nuestro
+            
+            sql = f"""-- 1. COTIZACION DÓLAR PARA EXPIRATION
+DELETE FROM DOLLAR_EXCHANGE_RATES WHERE DATE_RATE = TO_DATE('{c_ex}','YYYY-MM-DD');
+INSERT INTO DOLLAR_EXCHANGE_RATES (DATE_RATE, PURCHASE, SELLING, PROCESS_DATE) 
+VALUES (TO_DATE('{c_ex}','YYYY-MM-DD'), {buy_rate}, {sell_rate}, CURRENT_TIMESTAMP);
+
+-- 2. SETTLEMENT BASE (Procesadora ID: {p_procesadora})
+UPDATE RD_LIQUIDATIONS_USER_{marca_key} 
+SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'), 
+    LIQ_DATE=TO_DATE('{c_cl}','YYYY-MM-DD'), 
+    EXPIRATION_DATE=TO_DATE('{c_ex}','YYYY-MM-DD'), 
+    PORTFOLIO={p_procesadora}, 
+    LIQ_AUS_BALANCE={base_p}, 
+    LAST_LIQ_USD_AMOUNT={base_d} 
+WHERE ACCOUNT='{acc_s}';
+
+-- 3. SUMMARY HEADER (Maestro ID: {p_maestro})
+UPDATE RD_SUMMARY_HEADER_{marca_key} 
+SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'), 
+    NEXT_CLOSE_DATE=TO_DATE('{n_cl}','YYYY-MM-DD'), 
+    PORTFOLIO={p_maestro} 
+WHERE ACCOUNT_NUMBER_ID='{acc_s}';
+
+-- 4. MAESTRO DE CUENTAS (Maestro ID: {p_maestro})
+UPDATE CREDIT_ACCOUNTS 
+SET PORTFOLIO_TYPE_ID = {p_maestro} 
+WHERE "NUMBER" = '{acc_s}';"""
+            
+            st.code(sql, "sql")
+    st.subheader("📅 Liquidación & Cotización")
     col_m1, col_m2 = st.columns(2)
     marca = col_m1.selectbox("Marca:", list(DATA_MASTER.keys()), key="set_marca")
     acc_s = col_m2.text_input("Cuenta (Settlement):", placeholder="Ej: 413864350", key="set_acc")
@@ -260,37 +336,45 @@ with tabs[4]:
     sell_rate = x_col2.number_input("Selling Rate (Venta):", value=2150.0)
 
     if st.button("🚀 Generar Bloque Settlement + Dólar"):
-        if not acc_s:
-            st.error("Por favor ingresa un número de cuenta.")
-        else:
-            # Determinamos si es PRISMA o FISERV para el mapeo
-            marca_key = "PRISMA" if "PRISMA" in marca else "FISERV"
-            
-            # Calculamos el Portafolio dinámico basado en la tabla Maestro
-            id_maestro = reg["p_maestro"]
-            portfolio_final = MAPEO_PORTFOLIOS[id_maestro][marca_key]
-            
-            sql = f"""-- COTIZACION DÓLAR PARA EXPIRATION
+    if not acc_s:
+        st.error("Por favor ingresa un número de cuenta.")
+    else:
+        # 1. Detectar Marca
+        marca_key = "PRISMA" if "PRISMA" in marca else "FISERV"
+        
+        # 2. Obtener IDs de Portafolio
+        id_semana = reg["p_maestro"] # Del 1 al 4 según la fecha
+        p_procesadora = MAPEO_PORTFOLIOS[id_semana][marca_key] # Ej: 3
+        p_nuestro = MAPEO_PORTFOLIOS[id_semana]["MAESTRO"]     # Ej: 2
+        
+        sql = f"""-- 1. COTIZACION DÓLAR
 DELETE FROM DOLLAR_EXCHANGE_RATES WHERE DATE_RATE = TO_DATE('{c_ex}','YYYY-MM-DD');
-INSERT INTO DOLLAR_EXCHANGE_RATES (DATE_RATE, PURCHASE, SELLING, PROCESS_DATE) VALUES (TO_DATE('{c_ex}','YYYY-MM-DD'), {buy_rate}, {sell_rate}, CURRENT_TIMESTAMP);
+INSERT INTO DOLLAR_EXCHANGE_RATES (DATE_RATE, PURCHASE, SELLING, PROCESS_DATE) 
+VALUES (TO_DATE('{c_ex}','YYYY-MM-DD'), {buy_rate}, {sell_rate}, CURRENT_TIMESTAMP);
 
--- SETTLEMENT BASE ({marca_key} - Cartera Maestro {id_maestro} -> Portafolio {portfolio_final})
+-- 2. SETTLEMENT PROCESADORA (Usa código procesadora: {p_procesadora})
 UPDATE RD_LIQUIDATIONS_USER_{marca_key} 
 SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'), 
     LIQ_DATE=TO_DATE('{c_cl}','YYYY-MM-DD'), 
     EXPIRATION_DATE=TO_DATE('{c_ex}','YYYY-MM-DD'), 
-    PORTFOLIO={portfolio_final}, 
+    PORTFOLIO={p_procesadora}, 
     LIQ_AUS_BALANCE={base_p}, 
     LAST_LIQ_USD_AMOUNT={base_d} 
 WHERE ACCOUNT='{acc_s}';
 
+-- 3. SUMMARY HEADER (Usa nuestro código maestro: {p_nuestro})
 UPDATE RD_SUMMARY_HEADER_{marca_key} 
 SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'), 
     NEXT_CLOSE_DATE=TO_DATE('{n_cl}','YYYY-MM-DD'), 
-    PORTFOLIO={portfolio_final} 
-WHERE ACCOUNT_NUMBER_ID='{acc_s}';"""
-            
-            st.code(sql, "sql")
+    PORTFOLIO={p_nuestro} 
+WHERE ACCOUNT_NUMBER_ID='{acc_s}';
+
+-- 4. MAESTRO DE CUENTAS (Usa nuestro código maestro: {p_nuestro})
+UPDATE CREDIT_ACCOUNTS 
+SET PORTFOLIO_TYPE_ID = {p_nuestro} 
+WHERE "NUMBER" = '{acc_s}';"""
+        
+        st.code(sql, "sql")
 with tabs[5]:
     st.subheader("💰 Simulator: Calculadora de Deuda Dinámica")
     st.info("Configura la base y los movimientos para predecir el resultado de la API.")
