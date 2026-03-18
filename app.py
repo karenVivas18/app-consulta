@@ -6,61 +6,70 @@ from datetime import datetime, date
 st.set_page_config(page_title="QA Automation Tool COTA", page_icon="🚀", layout="wide")
 
 # --- DATA MAESTRA DE CALENDARIOS ---
+MAPEO_PORTFOLIOS = {
+    1: {"PRISMA": 4, "FISERV": 13}, # 1ra Semana
+    2: {"PRISMA": 3, "FISERV": 14}, # 2da Semana
+    3: {"PRISMA": 2, "FISERV": 11}, # 3ra Semana
+    4: {"PRISMA": 1, "FISERV": 12}, # 4ta Semana
+}
+
+# --- 2. DATA MAESTRA COMPLETA 2026 ---
+# p_maestro identifica la semana (1, 2, 3 o 4)
 DATA_MASTER = {
     "PRISMA (Visa/Amex)": [
-        {"cierre": date(2026, 1, 8), "curr_e": date(2026, 1, 16), "next_c": date(2026, 2, 5), "prev_c": date(2025, 12, 11), "prev_e": date(2025, 12, 19), "next_e": date(2026, 2, 13), "port": 4},
-        {"cierre": date(2026, 1, 15), "curr_e": date(2026, 1, 23), "next_c": date(2026, 2, 12), "prev_c": date(2025, 12, 18), "prev_e": date(2025, 12, 26), "next_e": date(2026, 2, 20), "port": 3},
-        {"cierre": date(2026, 1, 22), "curr_e": date(2026, 2, 2), "next_c": date(2026, 2, 19), "prev_c": date(2025, 12, 24), "prev_e": date(2026, 1, 5), "next_e": date(2026, 3, 2), "port": 2},
-        {"cierre": date(2026, 1, 29), "curr_e": date(2026, 2, 6), "next_c": date(2026, 2, 26), "prev_c": date(2025, 12, 31), "prev_e": date(2026, 1, 9), "next_e": date(2026, 3, 6), "port": 1},
-        {"cierre": date(2026, 2, 5), "curr_e": date(2026, 2, 13), "next_c": date(2026, 3, 5), "prev_c": date(2026, 1, 8), "prev_e": date(2026, 1, 16), "next_e": date(2026, 3, 13), "port": 4},
-        {"cierre": date(2026, 2, 12), "curr_e": date(2026, 2, 20), "next_c": date(2026, 3, 12), "prev_c": date(2026, 1, 15), "prev_e": date(2026, 1, 23), "next_e": date(2026, 3, 20), "port": 3},
-        {"cierre": date(2026, 2, 19), "curr_e": date(2026, 3, 2), "next_c": date(2026, 3, 19), "prev_c": date(2026, 1, 22), "prev_e": date(2026, 2, 2), "next_e": date(2026, 4, 1), "port": 2},
-        {"cierre": date(2026, 2, 26), "curr_e": date(2026, 3, 6), "next_c": date(2026, 3, 26), "prev_c": date(2026, 1, 29), "prev_e": date(2026, 2, 6), "next_e": date(2026, 4, 6), "port": 1},
-        {"cierre": date(2026, 3, 5), "curr_e": date(2026, 3, 13), "next_c": date(2026, 4, 9), "prev_c": date(2026, 2, 5), "prev_e": date(2026, 2, 13), "next_e": date(2026, 4, 17), "port": 4},
-        {"cierre": date(2026, 3, 12), "curr_e": date(2026, 3, 20), "next_c": date(2026, 4, 16), "prev_c": date(2026, 2, 12), "prev_e": date(2026, 2, 20), "next_e": date(2026, 4, 24), "port": 3},
-        {"cierre": date(2026, 3, 19), "curr_e": date(2026, 4, 1), "next_c": date(2026, 4, 23), "prev_c": date(2026, 2, 19), "prev_e": date(2026, 3, 2), "next_e": date(2026, 5, 4), "port": 2},
-        {"cierre": date(2026, 3, 26), "curr_e": date(2026, 4, 6), "next_c": date(2026, 4, 30), "prev_c": date(2026, 2, 26), "prev_e": date(2026, 3, 6), "next_e": date(2026, 5, 8), "port": 1},
-        {"cierre": date(2026, 4, 9), "curr_e": date(2026, 4, 17), "next_c": date(2026, 5, 7), "prev_c": date(2026, 3, 5), "prev_e": date(2026, 3, 13), "next_e": date(2026, 5, 15), "port": 4},
-        {"cierre": date(2026, 4, 16), "curr_e": date(2026, 4, 24), "next_c": date(2026, 5, 14), "prev_c": date(2026, 3, 12), "prev_e": date(2026, 3, 20), "next_e": date(2026, 5, 22), "port": 3},
-        {"cierre": date(2026, 4, 23), "curr_e": date(2026, 5, 4), "next_c": date(2026, 5, 21), "prev_c": date(2026, 3, 19), "prev_e": date(2026, 4, 1), "next_e": date(2026, 6, 1), "port": 2},
-        {"cierre": date(2026, 4, 30), "curr_e": date(2026, 5, 8), "next_c": date(2026, 5, 28), "prev_c": date(2026, 3, 26), "prev_e": date(2026, 4, 6), "next_e": date(2026, 6, 5), "port": 1},
-        {"cierre": date(2026, 5, 7), "curr_e": date(2026, 5, 15), "next_c": date(2026, 6, 4), "prev_c": date(2026, 4, 9), "prev_e": date(2026, 4, 17), "next_e": date(2026, 6, 12), "port": 4},
-        {"cierre": date(2026, 5, 14), "curr_e": date(2026, 5, 22), "next_c": date(2026, 6, 11), "prev_c": date(2026, 4, 16), "prev_e": date(2026, 4, 24), "next_e": date(2026, 6, 19), "port": 3},
-        {"cierre": date(2026, 5, 21), "curr_e": date(2026, 6, 1), "next_c": date(2026, 6, 18), "prev_c": date(2026, 4, 23), "prev_e": date(2026, 5, 4), "next_e": date(2026, 7, 1), "port": 2},
-        {"cierre": date(2026, 5, 28), "curr_e": date(2026, 6, 5), "next_c": date(2026, 6, 25), "prev_c": date(2026, 4, 30), "prev_e": date(2026, 5, 8), "next_e": date(2026, 7, 3), "port": 1},
-        {"cierre": date(2026, 6, 4), "curr_e": date(2026, 6, 12), "next_c": date(2026, 7, 8), "prev_c": date(2026, 5, 7), "prev_e": date(2026, 5, 15), "next_e": date(2026, 7, 17), "port": 4},
-        {"cierre": date(2026, 6, 11), "curr_e": date(2026, 6, 19), "next_c": date(2026, 7, 16), "prev_c": date(2026, 5, 14), "prev_e": date(2026, 5, 22), "next_e": date(2026, 7, 24), "port": 3},
-        {"cierre": date(2026, 6, 18), "curr_e": date(2026, 7, 1), "next_c": date(2026, 7, 23), "prev_c": date(2026, 5, 21), "prev_e": date(2026, 6, 1), "next_e": date(2026, 8, 3), "port": 2},
-        {"cierre": date(2026, 6, 25), "curr_e": date(2026, 7, 3), "next_c": date(2026, 7, 30), "prev_c": date(2026, 5, 28), "prev_e": date(2026, 6, 5), "next_e": date(2026, 8, 7), "port": 1},
-        {"cierre": date(2026, 7, 8), "curr_e": date(2026, 7, 17), "next_c": date(2026, 8, 6), "prev_c": date(2026, 6, 4), "prev_e": date(2026, 6, 12), "next_e": date(2026, 8, 14), "port": 4},
-        {"cierre": date(2026, 7, 16), "curr_e": date(2026, 7, 24), "next_c": date(2026, 8, 13), "prev_c": date(2026, 6, 11), "prev_e": date(2026, 6, 19), "next_e": date(2026, 8, 21), "port": 3},
-        {"cierre": date(2026, 7, 23), "curr_e": date(2026, 8, 3), "next_c": date(2026, 8, 20), "prev_c": date(2026, 6, 18), "prev_e": date(2026, 7, 1), "next_e": date(2026, 9, 1), "port": 2},
-        {"cierre": date(2026, 7, 30), "curr_e": date(2026, 8, 7), "next_c": date(2026, 8, 27), "prev_c": date(2026, 6, 25), "prev_e": date(2026, 7, 3), "next_e": date(2026, 9, 4), "port": 1},
-        {"cierre": date(2026, 8, 6), "curr_e": date(2026, 8, 14), "next_c": date(2026, 9, 10), "prev_c": date(2026, 7, 8), "prev_e": date(2026, 7, 17), "next_e": date(2026, 9, 18), "port": 4},
-        {"cierre": date(2026, 8, 13), "curr_e": date(2026, 8, 21), "next_c": date(2026, 9, 17), "prev_c": date(2026, 7, 16), "prev_e": date(2026, 7, 24), "next_e": date(2026, 9, 25), "port": 3},
-        {"cierre": date(2026, 8, 20), "curr_e": date(2026, 9, 1), "next_c": date(2026, 9, 24), "prev_c": date(2026, 7, 23), "prev_e": date(2026, 8, 3), "next_e": date(2026, 10, 5), "port": 2},
-        {"cierre": date(2026, 8, 27), "curr_e": date(2026, 9, 4), "next_c": date(2026, 10, 1), "prev_c": date(2026, 7, 30), "prev_e": date(2026, 8, 7), "next_e": date(2026, 10, 9), "port": 1},
-        {"cierre": date(2026, 9, 10), "curr_e": date(2026, 9, 18), "next_c": date(2026, 10, 8), "prev_c": date(2026, 8, 6), "prev_e": date(2026, 8, 14), "next_e": date(2026, 10, 16), "port": 4},
-        {"cierre": date(2026, 9, 17), "curr_e": date(2026, 9, 25), "next_c": date(2026, 10, 15), "prev_c": date(2026, 8, 13), "prev_e": date(2026, 8, 21), "next_e": date(2026, 10, 23), "port": 3},
-        {"cierre": date(2026, 9, 24), "curr_e": date(2026, 10, 5), "next_c": date(2026, 10, 22), "prev_c": date(2026, 8, 20), "prev_e": date(2026, 9, 1), "next_e": date(2026, 11, 2), "port": 2},
-        {"cierre": date(2026, 10, 1), "curr_e": date(2026, 10, 9), "next_c": date(2026, 10, 29), "prev_c": date(2026, 8, 27), "prev_e": date(2026, 9, 4), "next_e": date(2026, 11, 9), "port": 1},
-        {"cierre": date(2026, 10, 8), "curr_e": date(2026, 10, 16), "next_c": date(2026, 11, 5), "prev_c": date(2026, 9, 10), "prev_e": date(2026, 9, 18), "next_e": date(2026, 11, 13), "port": 4},
-        {"cierre": date(2026, 10, 15), "curr_e": date(2026, 10, 23), "next_c": date(2026, 11, 12), "prev_c": date(2026, 9, 17), "prev_e": date(2026, 9, 25), "next_e": date(2026, 11, 23), "port": 3},
-        {"cierre": date(2026, 10, 22), "curr_e": date(2026, 11, 2), "next_c": date(2026, 11, 19), "prev_c": date(2026, 9, 24), "prev_e": date(2026, 10, 5), "next_e": date(2026, 12, 1), "port": 2},
-        {"cierre": date(2026, 10, 29), "curr_e": date(2026, 11, 9), "next_c": date(2026, 11, 26), "prev_c": date(2026, 10, 1), "prev_e": date(2026, 10, 9), "next_e": date(2026, 12, 4), "port": 1},
-        {"cierre": date(2026, 11, 5), "curr_e": date(2026, 11, 13), "next_c": date(2026, 12, 10), "prev_c": date(2026, 10, 8), "prev_e": date(2026, 10, 16), "next_e": date(2026, 12, 18), "port": 4},
-        {"cierre": date(2026, 11, 12), "curr_e": date(2026, 11, 23), "next_c": date(2026, 12, 17), "prev_c": date(2026, 10, 15), "prev_e": date(2026, 10, 23), "next_e": date(2026, 12, 28), "port": 3},
-        {"cierre": date(2026, 11, 19), "curr_e": date(2026, 12, 1), "next_c": date(2026, 12, 24), "prev_c": date(2026, 10, 22), "prev_e": date(2026, 11, 2), "next_e": date(2027, 1, 4), "port": 2},
-        {"cierre": date(2026, 11, 26), "curr_e": date(2026, 12, 4), "next_c": date(2026, 12, 31), "prev_c": date(2026, 10, 29), "prev_e": date(2026, 11, 9), "next_e": date(2027, 1, 8), "port": 1},
-        {"cierre": date(2026, 12, 10), "curr_e": date(2026, 12, 18), "next_c": date(2027, 1, 7), "prev_c": date(2026, 11, 5), "prev_e": date(2026, 11, 13), "next_e": date(2027, 1, 15), "port": 4},
-        {"cierre": date(2026, 12, 17), "curr_e": date(2026, 12, 28), "next_c": date(2027, 1, 14), "prev_c": date(2026, 11, 12), "prev_e": date(2026, 11, 23), "next_e": date(2027, 1, 22), "port": 3},
-        {"cierre": date(2026, 12, 24), "curr_e": date(2027, 1, 4), "next_c": date(2027, 1, 21), "prev_c": date(2026, 11, 19), "prev_e": date(2026, 12, 1), "next_e": date(2027, 2, 1), "port": 2},
-        {"cierre": date(2026, 12, 31), "curr_e": date(2027, 1, 8), "next_c": date(2027, 1, 28), "prev_c": date(2026, 11, 26), "prev_e": date(2026, 12, 4), "next_e": date(2027, 2, 5), "port": 1},
+        {"p_maestro": 1, "cierre": date(2026, 1, 8), "curr_e": date(2026, 1, 16), "next_c": date(2026, 2, 5), "prev_c": date(2025, 12, 11), "prev_e": date(2025, 12, 19), "next_e": date(2026, 2, 13)},
+        {"p_maestro": 2, "cierre": date(2026, 1, 15), "curr_e": date(2026, 1, 23), "next_c": date(2026, 2, 12), "prev_c": date(2025, 12, 18), "prev_e": date(2025, 12, 26), "next_e": date(2026, 2, 20)},
+        {"p_maestro": 3, "cierre": date(2026, 1, 22), "curr_e": date(2026, 2, 2), "next_c": date(2026, 2, 19), "prev_c": date(2025, 12, 24), "prev_e": date(2026, 1, 5), "next_e": date(2026, 3, 2)},
+        {"p_maestro": 4, "cierre": date(2026, 1, 29), "curr_e": date(2026, 2, 6), "next_c": date(2026, 2, 26), "prev_c": date(2025, 12, 31), "prev_e": date(2026, 1, 9), "next_e": date(2026, 3, 6)},
+        {"p_maestro": 1, "cierre": date(2026, 2, 5), "curr_e": date(2026, 2, 13), "next_c": date(2026, 3, 5), "prev_c": date(2026, 1, 8), "prev_e": date(2026, 1, 16), "next_e": date(2026, 3, 13)},
+        {"p_maestro": 2, "cierre": date(2026, 2, 12), "curr_e": date(2026, 2, 20), "next_c": date(2026, 3, 12), "prev_c": date(2026, 1, 15), "prev_e": date(2026, 1, 23), "next_e": date(2026, 3, 20)},
+        {"p_maestro": 3, "cierre": date(2026, 2, 19), "curr_e": date(2026, 3, 2), "next_c": date(2026, 3, 19), "prev_c": date(2026, 1, 22), "prev_e": date(2026, 2, 2), "next_e": date(2026, 4, 1)},
+        {"p_maestro": 4, "cierre": date(2026, 2, 26), "curr_e": date(2026, 3, 6), "next_c": date(2026, 3, 26), "prev_c": date(2026, 1, 29), "prev_e": date(2026, 2, 6), "next_e": date(2026, 4, 6)},
+        {"p_maestro": 1, "cierre": date(2026, 3, 5), "curr_e": date(2026, 3, 13), "next_c": date(2026, 4, 9), "prev_c": date(2026, 2, 5), "prev_e": date(2026, 2, 13), "next_e": date(2026, 4, 17)},
+        {"p_maestro": 2, "cierre": date(2026, 3, 12), "curr_e": date(2026, 3, 20), "next_c": date(2026, 4, 16), "prev_c": date(2026, 2, 12), "prev_e": date(2026, 2, 20), "next_e": date(2026, 4, 24)},
+        {"p_maestro": 3, "cierre": date(2026, 3, 19), "curr_e": date(2026, 4, 1), "next_c": date(2026, 4, 23), "prev_c": date(2026, 2, 19), "prev_e": date(2026, 3, 2), "next_e": date(2026, 5, 4)},
+        {"p_maestro": 4, "cierre": date(2026, 3, 26), "curr_e": date(2026, 4, 6), "next_c": date(2026, 4, 30), "prev_c": date(2026, 2, 26), "prev_e": date(2026, 3, 6), "next_e": date(2026, 5, 8)},
+        {"p_maestro": 1, "cierre": date(2026, 4, 9), "curr_e": date(2026, 4, 17), "next_c": date(2026, 5, 7), "prev_c": date(2026, 3, 5), "prev_e": date(2026, 3, 13), "next_e": date(2026, 5, 15)},
+        {"p_maestro": 2, "cierre": date(2026, 4, 16), "curr_e": date(2026, 4, 24), "next_c": date(2026, 5, 14), "prev_c": date(2026, 3, 12), "prev_e": date(2026, 3, 20), "next_e": date(2026, 5, 22)},
+        {"p_maestro": 3, "cierre": date(2026, 4, 23), "curr_e": date(2026, 5, 4), "next_c": date(2026, 5, 21), "prev_c": date(2026, 3, 19), "prev_e": date(2026, 4, 1), "next_e": date(2026, 6, 1)},
+        {"p_maestro": 4, "cierre": date(2026, 4, 30), "curr_e": date(2026, 5, 8), "next_c": date(2026, 5, 28), "prev_c": date(2026, 3, 26), "prev_e": date(2026, 4, 6), "next_e": date(2026, 6, 5)},
+        {"p_maestro": 1, "cierre": date(2026, 5, 7), "curr_e": date(2026, 5, 15), "next_c": date(2026, 6, 4), "prev_c": date(2026, 4, 9), "prev_e": date(2026, 4, 17), "next_e": date(2026, 6, 12)},
+        {"p_maestro": 2, "cierre": date(2026, 5, 14), "curr_e": date(2026, 5, 22), "next_c": date(2026, 6, 11), "prev_c": date(2026, 4, 16), "prev_e": date(2026, 4, 24), "next_e": date(2026, 6, 19)},
+        {"p_maestro": 3, "cierre": date(2026, 5, 21), "curr_e": date(2026, 6, 1), "next_c": date(2026, 6, 18), "prev_c": date(2026, 4, 23), "prev_e": date(2026, 5, 4), "next_e": date(2026, 7, 1)},
+        {"p_maestro": 4, "cierre": date(2026, 5, 28), "curr_e": date(2026, 6, 5), "next_c": date(2026, 6, 25), "prev_c": date(2026, 4, 30), "prev_e": date(2026, 5, 8), "next_e": date(2026, 7, 3)},
+        {"p_maestro": 1, "cierre": date(2026, 6, 4), "curr_e": date(2026, 6, 12), "next_c": date(2026, 7, 8), "prev_c": date(2026, 5, 7), "prev_e": date(2026, 5, 15), "next_e": date(2026, 7, 17)},
+        {"p_maestro": 2, "cierre": date(2026, 6, 11), "curr_e": date(2026, 6, 19), "next_c": date(2026, 7, 16), "prev_c": date(2026, 5, 14), "prev_e": date(2026, 5, 22), "next_e": date(2026, 7, 24)},
+        {"p_maestro": 3, "cierre": date(2026, 6, 18), "curr_e": date(2026, 7, 1), "next_c": date(2026, 7, 23), "prev_c": date(2026, 5, 21), "prev_e": date(2026, 6, 1), "next_e": date(2026, 8, 3)},
+        {"p_maestro": 4, "cierre": date(2026, 6, 25), "curr_e": date(2026, 7, 3), "next_c": date(2026, 7, 30), "prev_c": date(2026, 5, 28), "prev_e": date(2026, 6, 5), "next_e": date(2026, 8, 7)},
+        {"p_maestro": 1, "cierre": date(2026, 7, 8), "curr_e": date(2026, 7, 17), "next_c": date(2026, 8, 6), "prev_c": date(2026, 6, 4), "prev_e": date(2026, 6, 12), "next_e": date(2026, 8, 14)},
+        {"p_maestro": 2, "cierre": date(2026, 7, 16), "curr_e": date(2026, 7, 24), "next_c": date(2026, 8, 13), "prev_c": date(2026, 6, 11), "prev_e": date(2026, 6, 19), "next_e": date(2026, 8, 21)},
+        {"p_maestro": 3, "cierre": date(2026, 7, 23), "curr_e": date(2026, 8, 3), "next_c": date(2026, 8, 20), "prev_c": date(2026, 6, 18), "prev_e": date(2026, 7, 1), "next_e": date(2026, 9, 1)},
+        {"p_maestro": 4, "cierre": date(2026, 7, 30), "curr_e": date(2026, 8, 7), "next_c": date(2026, 8, 27), "prev_c": date(2026, 6, 25), "prev_e": date(2026, 7, 3), "next_e": date(2026, 9, 4)},
+        {"p_maestro": 1, "cierre": date(2026, 8, 6), "curr_e": date(2026, 8, 14), "next_c": date(2026, 9, 10), "prev_c": date(2026, 7, 8), "prev_e": date(2026, 7, 17), "next_e": date(2026, 9, 18)},
+        {"p_maestro": 2, "cierre": date(2026, 8, 13), "curr_e": date(2026, 8, 21), "next_c": date(2026, 9, 17), "prev_c": date(2026, 7, 16), "prev_e": date(2026, 7, 24), "next_e": date(2026, 9, 25)},
+        {"p_maestro": 3, "cierre": date(2026, 8, 20), "curr_e": date(2026, 9, 1), "next_c": date(2026, 9, 24), "prev_c": date(2026, 7, 23), "prev_e": date(2026, 8, 3), "next_e": date(2026, 10, 5)},
+        {"p_maestro": 4, "cierre": date(2026, 8, 27), "curr_e": date(2026, 9, 4), "next_c": date(2026, 10, 1), "prev_c": date(2026, 7, 30), "prev_e": date(2026, 7, 3), "next_e": date(2026, 10, 9)},
+        {"p_maestro": 1, "cierre": date(2026, 9, 10), "curr_e": date(2026, 9, 18), "next_c": date(2026, 10, 8), "prev_c": date(2026, 8, 6), "prev_e": date(2026, 8, 14), "next_e": date(2026, 10, 16)},
+        {"p_maestro": 2, "cierre": date(2026, 9, 17), "curr_e": date(2026, 9, 25), "next_c": date(2026, 10, 15), "prev_c": date(2026, 8, 13), "prev_e": date(2026, 8, 21), "next_e": date(2026, 10, 23)},
+        {"p_maestro": 3, "cierre": date(2026, 9, 24), "curr_e": date(2026, 10, 5), "next_c": date(2026, 10, 22), "prev_c": date(2026, 8, 20), "prev_e": date(2026, 9, 1), "next_e": date(2026, 11, 2)},
+        {"p_maestro": 4, "cierre": date(2026, 10, 1), "curr_e": date(2026, 10, 9), "next_c": date(2026, 10, 29), "prev_c": date(2026, 8, 27), "prev_e": date(2026, 9, 4), "next_e": date(2026, 11, 9)},
+        {"p_maestro": 1, "cierre": date(2026, 10, 8), "curr_e": date(2026, 10, 16), "next_c": date(2026, 11, 5), "prev_c": date(2026, 9, 10), "prev_e": date(2026, 9, 18), "next_e": date(2026, 11, 13)},
+        {"p_maestro": 2, "cierre": date(2026, 10, 15), "curr_e": date(2026, 10, 23), "next_c": date(2026, 11, 12), "prev_c": date(2026, 9, 17), "prev_e": date(2026, 9, 25), "next_e": date(2026, 11, 23)},
+        {"p_maestro": 3, "cierre": date(2026, 10, 22), "curr_e": date(2026, 11, 2), "next_c": date(2026, 11, 19), "prev_c": date(2026, 9, 24), "prev_e": date(2026, 10, 5), "next_e": date(2026, 12, 1)},
+        {"p_maestro": 4, "cierre": date(2026, 10, 29), "curr_e": date(2026, 11, 9), "next_c": date(2026, 11, 26), "prev_c": date(2026, 10, 1), "prev_e": date(2026, 10, 9), "next_e": date(2026, 12, 4)},
+        {"p_maestro": 1, "cierre": date(2026, 11, 5), "curr_e": date(2026, 11, 13), "next_c": date(2026, 12, 10), "prev_c": date(2026, 10, 8), "prev_e": date(2026, 10, 16), "next_e": date(2026, 12, 18)},
+        {"p_maestro": 2, "cierre": date(2026, 11, 12), "curr_e": date(2026, 11, 23), "next_c": date(2026, 12, 17), "prev_c": date(2026, 10, 15), "prev_e": date(2026, 10, 23), "next_e": date(2026, 12, 28)},
+        {"p_maestro": 3, "cierre": date(2026, 11, 19), "curr_e": date(2026, 12, 1), "next_c": date(2026, 12, 24), "prev_c": date(2026, 10, 22), "prev_e": date(2026, 11, 2), "next_e": date(2027, 1, 4)},
+        {"p_maestro": 4, "cierre": date(2026, 11, 26), "curr_e": date(2026, 12, 4), "next_c": date(2026, 12, 31), "prev_c": date(2026, 10, 29), "prev_e": date(2026, 11, 9), "next_e": date(2027, 1, 8)},
+        {"p_maestro": 1, "cierre": date(2026, 12, 10), "curr_e": date(2026, 12, 18), "next_c": date(2027, 1, 7), "prev_c": date(2026, 11, 5), "prev_e": date(2026, 11, 13), "next_e": date(2027, 1, 15)},
+        {"p_maestro": 2, "cierre": date(2026, 12, 17), "curr_e": date(2026, 12, 28), "next_c": date(2027, 1, 14), "prev_c": date(2026, 11, 12), "prev_e": date(2026, 11, 23), "next_e": date(2027, 1, 22)},
+        {"p_maestro": 3, "cierre": date(2026, 12, 24), "curr_e": date(2027, 1, 4), "next_c": date(2027, 1, 21), "prev_c": date(2026, 11, 19), "prev_e": date(2026, 12, 1), "next_e": date(2027, 2, 1)},
+        {"p_maestro": 4, "cierre": date(2026, 12, 31), "curr_e": date(2027, 1, 8), "next_c": date(2027, 1, 28), "prev_c": date(2026, 11, 26), "prev_e": date(2026, 12, 4), "next_e": date(2027, 2, 5)},
     ],
     "FISERV (MasterCard)": [
-        # Puedes seguir agregando las de Master aquí si las tienes
-        {"cierre": date(2026, 1, 8), "curr_e": date(2026, 1, 16), "next_c": date(2026, 2, 5), "prev_c": date(2025, 12, 11), "prev_e": date(2025, 12, 19), "next_e": date(2026, 2, 13), "port": 13},
-        {"cierre": date(2026, 1, 22), "curr_e": date(2026, 2, 2), "next_c": date(2026, 2, 19), "prev_c": date(2025, 12, 24), "prev_e": date(2026, 1, 5), "next_e": date(2026, 3, 2), "port": 11},
+        # Se agregan ejemplos para Master que usen el mismo sistema p_maestro
+        {"p_maestro": 1, "cierre": date(2026, 1, 8), "curr_e": date(2026, 1, 16), "next_c": date(2026, 2, 5), "prev_c": date(2025, 12, 11), "prev_e": date(2025, 12, 19), "next_e": date(2026, 2, 13)},
+        {"p_maestro": 3, "cierre": date(2026, 1, 22), "curr_e": date(2026, 2, 2), "next_c": date(2026, 2, 19), "prev_c": date(2025, 12, 24), "prev_e": date(2026, 1, 5), "next_e": date(2026, 3, 2)},
     ]
 }
 
@@ -216,19 +225,31 @@ with tabs[3]:
 with tabs[4]:
     st.subheader("📅 Liquidación & Cotización")
     col_m1, col_m2 = st.columns(2)
-    marca = col_m1.selectbox("Marca:", list(DATA_MASTER.keys()))
-    acc_s = col_m2.text_input("Cuenta (Settlement):", placeholder="413864350")
+    marca = col_m1.selectbox("Marca:", list(DATA_MASTER.keys()), key="set_marca")
+    acc_s = col_m2.text_input("Cuenta (Settlement):", placeholder="Ej: 413864350", key="set_acc")
     
     cal_ref = DATA_MASTER[marca]
-    c_selected = st.selectbox("Cierre (Current Closing):", [f["cierre"] for f in cal_ref])
+    c_selected = st.selectbox("Cierre (Current Closing):", 
+                              options=[f["cierre"] for f in cal_ref], 
+                              format_func=lambda x: x.strftime("%d/%m/%Y"),
+                              key="set_close")
+    
     reg = next(item for item in cal_ref if item["cierre"] == c_selected)
     
+    # Visualización de Fechas
     f1, f2, f3 = st.columns(3)
-    c_cl, p_cl, n_cl = f1.date_input("Current Closing", reg["cierre"]), f2.date_input("Previous Closing", reg["prev_c"]), f3.date_input("Next Closing", reg["next_c"])
+    c_cl = f1.date_input("Current Closing", reg["cierre"])
+    p_cl = f2.date_input("Previous Closing", reg["prev_c"])
+    n_cl = f3.date_input("Next Closing", reg["next_c"])
+    
     f4, f5, f6 = st.columns(3)
-    c_ex, p_ex, n_ex = f4.date_input("Current Expiration", reg["curr_e"]), f5.date_input("Prev Expiration", reg["prev_e"]), f6.date_input("Next Expiration", reg["next_e"])
+    c_ex = f4.date_input("Current Expiration", reg["curr_e"])
+    p_ex = f5.date_input("Prev Expiration", reg["prev_e"])
+    n_ex = f6.date_input("Next Expiration", reg["next_e"])
     
     st.divider()
+    
+    # Valores de Deuda y Cotización
     st.subheader("💵 Configuración de Deuda Base & Dólar")
     d_col1, d_col2 = st.columns(2)
     base_p = d_col1.number_input("Pesos Base (LIQ_AUS_BALANCE):", value=0.0)
@@ -239,17 +260,37 @@ with tabs[4]:
     sell_rate = x_col2.number_input("Selling Rate (Venta):", value=2150.0)
 
     if st.button("🚀 Generar Bloque Settlement + Dólar"):
-        suf = "PRISMA" if "PRISMA" in marca else "FISERV"
-        p_liq = reg["port"] + (1 if suf=="PRISMA" else 0)
-        sql = f"""-- COTIZACION DÓLAR PARA EXPIRATION
+        if not acc_s:
+            st.error("Por favor ingresa un número de cuenta.")
+        else:
+            # Determinamos si es PRISMA o FISERV para el mapeo
+            marca_key = "PRISMA" if "PRISMA" in marca else "FISERV"
+            
+            # Calculamos el Portafolio dinámico basado en la tabla Maestro
+            id_maestro = reg["p_maestro"]
+            portfolio_final = MAPEO_PORTFOLIOS[id_maestro][marca_key]
+            
+            sql = f"""-- COTIZACION DÓLAR PARA EXPIRATION
 DELETE FROM DOLLAR_EXCHANGE_RATES WHERE DATE_RATE = TO_DATE('{c_ex}','YYYY-MM-DD');
 INSERT INTO DOLLAR_EXCHANGE_RATES (DATE_RATE, PURCHASE, SELLING, PROCESS_DATE) VALUES (TO_DATE('{c_ex}','YYYY-MM-DD'), {buy_rate}, {sell_rate}, CURRENT_TIMESTAMP);
 
--- SETTLEMENT BASE
-UPDATE RD_LIQUIDATIONS_USER_{suf} SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'), LIQ_DATE=TO_DATE('{c_cl}','YYYY-MM-DD'), EXPIRATION_DATE=TO_DATE('{c_ex}','YYYY-MM-DD'), PORTFOLIO={p_liq}, LIQ_AUS_BALANCE={base_p}, LAST_LIQ_USD_AMOUNT={base_d} WHERE ACCOUNT='{acc_s}';
-UPDATE RD_SUMMARY_HEADER_{suf} SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'), NEXT_CLOSE_DATE=TO_DATE('{n_cl}','YYYY-MM-DD'), PORTFOLIO={reg['port']} WHERE ACCOUNT_NUMBER_ID='{acc_s}';"""
-        st.code(sql, "sql")
+-- SETTLEMENT BASE ({marca_key} - Cartera Maestro {id_maestro} -> Portafolio {portfolio_final})
+UPDATE RD_LIQUIDATIONS_USER_{marca_key} 
+SET CLOSING_DATE_LIQ=TO_DATE('{p_cl}','YYYY-MM-DD'), 
+    LIQ_DATE=TO_DATE('{c_cl}','YYYY-MM-DD'), 
+    EXPIRATION_DATE=TO_DATE('{c_ex}','YYYY-MM-DD'), 
+    PORTFOLIO={portfolio_final}, 
+    LIQ_AUS_BALANCE={base_p}, 
+    LAST_LIQ_USD_AMOUNT={base_d} 
+WHERE ACCOUNT='{acc_s}';
 
+UPDATE RD_SUMMARY_HEADER_{marca_key} 
+SET CLOSE_DATE_ID=TO_DATE('{c_cl}','YYYY-MM-DD'), 
+    NEXT_CLOSE_DATE=TO_DATE('{n_cl}','YYYY-MM-DD'), 
+    PORTFOLIO={portfolio_final} 
+WHERE ACCOUNT_NUMBER_ID='{acc_s}';"""
+            
+            st.code(sql, "sql")
 with tabs[5]:
     st.subheader("💰 Simulator: Calculadora de Deuda Dinámica")
     st.info("Configura la base y los movimientos para predecir el resultado de la API.")
