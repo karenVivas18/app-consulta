@@ -8,17 +8,59 @@ st.set_page_config(page_title="QA Automation Tool COTA", page_icon="🚀", layou
 # --- DATA MAESTRA DE CALENDARIOS ---
 DATA_MASTER = {
     "PRISMA (Visa/Amex)": [
-        {"cierre": date(2026, 1, 8), "prev_c": date(2025, 12, 11), "next_c": date(2026, 2, 5), "prev_e": date(2025, 12, 19), "curr_e": date(2026, 1, 16), "next_e": date(2026, 2, 13), "port": 4},
-        {"cierre": date(2026, 1, 15), "prev_c": date(2025, 12, 18), "next_c": date(2026, 2, 12), "prev_e": date(2025, 12, 26), "curr_e": date(2026, 1, 23), "next_e": date(2026, 2, 20), "port": 3},
-        {"cierre": date(2026, 1, 22), "prev_c": date(2025, 12, 24), "next_c": date(2026, 2, 19), "prev_e": date(2026, 1, 5), "curr_e": date(2026, 2, 2), "next_e": date(2026, 3, 2), "port": 2},
-        {"cierre": date(2026, 1, 29), "prev_c": date(2025, 12, 31), "next_c": date(2026, 2, 26), "prev_e": date(2026, 1, 9), "curr_e": date(2026, 2, 6), "next_e": date(2026, 3, 6), "port": 1},
-        {"cierre": date(2026, 2, 5), "prev_c": date(2026, 1, 8), "next_c": date(2026, 3, 5), "prev_e": date(2026, 1, 16), "curr_e": date(2026, 2, 13), "next_e": date(2026, 3, 13), "port": 4},
-        {"cierre": date(2026, 2, 19), "prev_c": date(2026, 1, 22), "next_c": date(2026, 3, 19), "prev_e": date(2026, 2, 2), "curr_e": date(2026, 3, 2), "next_e": date(2026, 4, 1), "port": 2},
-        {"cierre": date(2026, 3, 5), "prev_c": date(2026, 2, 5), "next_c": date(2026, 4, 9), "prev_e": date(2026, 2, 13), "curr_e": date(2026, 3, 13), "next_e": date(2026, 4, 17), "port": 4},
+        {"cierre": date(2026, 1, 8), "curr_e": date(2026, 1, 16), "next_c": date(2026, 2, 5), "prev_c": date(2025, 12, 11), "prev_e": date(2025, 12, 19), "next_e": date(2026, 2, 13), "port": 4},
+        {"cierre": date(2026, 1, 15), "curr_e": date(2026, 1, 23), "next_c": date(2026, 2, 12), "prev_c": date(2025, 12, 18), "prev_e": date(2025, 12, 26), "next_e": date(2026, 2, 20), "port": 3},
+        {"cierre": date(2026, 1, 22), "curr_e": date(2026, 2, 2), "next_c": date(2026, 2, 19), "prev_c": date(2025, 12, 24), "prev_e": date(2026, 1, 5), "next_e": date(2026, 3, 2), "port": 2},
+        {"cierre": date(2026, 1, 29), "curr_e": date(2026, 2, 6), "next_c": date(2026, 2, 26), "prev_c": date(2025, 12, 31), "prev_e": date(2026, 1, 9), "next_e": date(2026, 3, 6), "port": 1},
+        {"cierre": date(2026, 2, 5), "curr_e": date(2026, 2, 13), "next_c": date(2026, 3, 5), "prev_c": date(2026, 1, 8), "prev_e": date(2026, 1, 16), "next_e": date(2026, 3, 13), "port": 4},
+        {"cierre": date(2026, 2, 12), "curr_e": date(2026, 2, 20), "next_c": date(2026, 3, 12), "prev_c": date(2026, 1, 15), "prev_e": date(2026, 1, 23), "next_e": date(2026, 3, 20), "port": 3},
+        {"cierre": date(2026, 2, 19), "curr_e": date(2026, 3, 2), "next_c": date(2026, 3, 19), "prev_c": date(2026, 1, 22), "prev_e": date(2026, 2, 2), "next_e": date(2026, 4, 1), "port": 2},
+        {"cierre": date(2026, 2, 26), "curr_e": date(2026, 3, 6), "next_c": date(2026, 3, 26), "prev_c": date(2026, 1, 29), "prev_e": date(2026, 2, 6), "next_e": date(2026, 4, 6), "port": 1},
+        {"cierre": date(2026, 3, 5), "curr_e": date(2026, 3, 13), "next_c": date(2026, 4, 9), "prev_c": date(2026, 2, 5), "prev_e": date(2026, 2, 13), "next_e": date(2026, 4, 17), "port": 4},
+        {"cierre": date(2026, 3, 12), "curr_e": date(2026, 3, 20), "next_c": date(2026, 4, 16), "prev_c": date(2026, 2, 12), "prev_e": date(2026, 2, 20), "next_e": date(2026, 4, 24), "port": 3},
+        {"cierre": date(2026, 3, 19), "curr_e": date(2026, 4, 1), "next_c": date(2026, 4, 23), "prev_c": date(2026, 2, 19), "prev_e": date(2026, 3, 2), "next_e": date(2026, 5, 4), "port": 2},
+        {"cierre": date(2026, 3, 26), "curr_e": date(2026, 4, 6), "next_c": date(2026, 4, 30), "prev_c": date(2026, 2, 26), "prev_e": date(2026, 3, 6), "next_e": date(2026, 5, 8), "port": 1},
+        {"cierre": date(2026, 4, 9), "curr_e": date(2026, 4, 17), "next_c": date(2026, 5, 7), "prev_c": date(2026, 3, 5), "prev_e": date(2026, 3, 13), "next_e": date(2026, 5, 15), "port": 4},
+        {"cierre": date(2026, 4, 16), "curr_e": date(2026, 4, 24), "next_c": date(2026, 5, 14), "prev_c": date(2026, 3, 12), "prev_e": date(2026, 3, 20), "next_e": date(2026, 5, 22), "port": 3},
+        {"cierre": date(2026, 4, 23), "curr_e": date(2026, 5, 4), "next_c": date(2026, 5, 21), "prev_c": date(2026, 3, 19), "prev_e": date(2026, 4, 1), "next_e": date(2026, 6, 1), "port": 2},
+        {"cierre": date(2026, 4, 30), "curr_e": date(2026, 5, 8), "next_c": date(2026, 5, 28), "prev_c": date(2026, 3, 26), "prev_e": date(2026, 4, 6), "next_e": date(2026, 6, 5), "port": 1},
+        {"cierre": date(2026, 5, 7), "curr_e": date(2026, 5, 15), "next_c": date(2026, 6, 4), "prev_c": date(2026, 4, 9), "prev_e": date(2026, 4, 17), "next_e": date(2026, 6, 12), "port": 4},
+        {"cierre": date(2026, 5, 14), "curr_e": date(2026, 5, 22), "next_c": date(2026, 6, 11), "prev_c": date(2026, 4, 16), "prev_e": date(2026, 4, 24), "next_e": date(2026, 6, 19), "port": 3},
+        {"cierre": date(2026, 5, 21), "curr_e": date(2026, 6, 1), "next_c": date(2026, 6, 18), "prev_c": date(2026, 4, 23), "prev_e": date(2026, 5, 4), "next_e": date(2026, 7, 1), "port": 2},
+        {"cierre": date(2026, 5, 28), "curr_e": date(2026, 6, 5), "next_c": date(2026, 6, 25), "prev_c": date(2026, 4, 30), "prev_e": date(2026, 5, 8), "next_e": date(2026, 7, 3), "port": 1},
+        {"cierre": date(2026, 6, 4), "curr_e": date(2026, 6, 12), "next_c": date(2026, 7, 8), "prev_c": date(2026, 5, 7), "prev_e": date(2026, 5, 15), "next_e": date(2026, 7, 17), "port": 4},
+        {"cierre": date(2026, 6, 11), "curr_e": date(2026, 6, 19), "next_c": date(2026, 7, 16), "prev_c": date(2026, 5, 14), "prev_e": date(2026, 5, 22), "next_e": date(2026, 7, 24), "port": 3},
+        {"cierre": date(2026, 6, 18), "curr_e": date(2026, 7, 1), "next_c": date(2026, 7, 23), "prev_c": date(2026, 5, 21), "prev_e": date(2026, 6, 1), "next_e": date(2026, 8, 3), "port": 2},
+        {"cierre": date(2026, 6, 25), "curr_e": date(2026, 7, 3), "next_c": date(2026, 7, 30), "prev_c": date(2026, 5, 28), "prev_e": date(2026, 6, 5), "next_e": date(2026, 8, 7), "port": 1},
+        {"cierre": date(2026, 7, 8), "curr_e": date(2026, 7, 17), "next_c": date(2026, 8, 6), "prev_c": date(2026, 6, 4), "prev_e": date(2026, 6, 12), "next_e": date(2026, 8, 14), "port": 4},
+        {"cierre": date(2026, 7, 16), "curr_e": date(2026, 7, 24), "next_c": date(2026, 8, 13), "prev_c": date(2026, 6, 11), "prev_e": date(2026, 6, 19), "next_e": date(2026, 8, 21), "port": 3},
+        {"cierre": date(2026, 7, 23), "curr_e": date(2026, 8, 3), "next_c": date(2026, 8, 20), "prev_c": date(2026, 6, 18), "prev_e": date(2026, 7, 1), "next_e": date(2026, 9, 1), "port": 2},
+        {"cierre": date(2026, 7, 30), "curr_e": date(2026, 8, 7), "next_c": date(2026, 8, 27), "prev_c": date(2026, 6, 25), "prev_e": date(2026, 7, 3), "next_e": date(2026, 9, 4), "port": 1},
+        {"cierre": date(2026, 8, 6), "curr_e": date(2026, 8, 14), "next_c": date(2026, 9, 10), "prev_c": date(2026, 7, 8), "prev_e": date(2026, 7, 17), "next_e": date(2026, 9, 18), "port": 4},
+        {"cierre": date(2026, 8, 13), "curr_e": date(2026, 8, 21), "next_c": date(2026, 9, 17), "prev_c": date(2026, 7, 16), "prev_e": date(2026, 7, 24), "next_e": date(2026, 9, 25), "port": 3},
+        {"cierre": date(2026, 8, 20), "curr_e": date(2026, 9, 1), "next_c": date(2026, 9, 24), "prev_c": date(2026, 7, 23), "prev_e": date(2026, 8, 3), "next_e": date(2026, 10, 5), "port": 2},
+        {"cierre": date(2026, 8, 27), "curr_e": date(2026, 9, 4), "next_c": date(2026, 10, 1), "prev_c": date(2026, 7, 30), "prev_e": date(2026, 8, 7), "next_e": date(2026, 10, 9), "port": 1},
+        {"cierre": date(2026, 9, 10), "curr_e": date(2026, 9, 18), "next_c": date(2026, 10, 8), "prev_c": date(2026, 8, 6), "prev_e": date(2026, 8, 14), "next_e": date(2026, 10, 16), "port": 4},
+        {"cierre": date(2026, 9, 17), "curr_e": date(2026, 9, 25), "next_c": date(2026, 10, 15), "prev_c": date(2026, 8, 13), "prev_e": date(2026, 8, 21), "next_e": date(2026, 10, 23), "port": 3},
+        {"cierre": date(2026, 9, 24), "curr_e": date(2026, 10, 5), "next_c": date(2026, 10, 22), "prev_c": date(2026, 8, 20), "prev_e": date(2026, 9, 1), "next_e": date(2026, 11, 2), "port": 2},
+        {"cierre": date(2026, 10, 1), "curr_e": date(2026, 10, 9), "next_c": date(2026, 10, 29), "prev_c": date(2026, 8, 27), "prev_e": date(2026, 9, 4), "next_e": date(2026, 11, 9), "port": 1},
+        {"cierre": date(2026, 10, 8), "curr_e": date(2026, 10, 16), "next_c": date(2026, 11, 5), "prev_c": date(2026, 9, 10), "prev_e": date(2026, 9, 18), "next_e": date(2026, 11, 13), "port": 4},
+        {"cierre": date(2026, 10, 15), "curr_e": date(2026, 10, 23), "next_c": date(2026, 11, 12), "prev_c": date(2026, 9, 17), "prev_e": date(2026, 9, 25), "next_e": date(2026, 11, 23), "port": 3},
+        {"cierre": date(2026, 10, 22), "curr_e": date(2026, 11, 2), "next_c": date(2026, 11, 19), "prev_c": date(2026, 9, 24), "prev_e": date(2026, 10, 5), "next_e": date(2026, 12, 1), "port": 2},
+        {"cierre": date(2026, 10, 29), "curr_e": date(2026, 11, 9), "next_c": date(2026, 11, 26), "prev_c": date(2026, 10, 1), "prev_e": date(2026, 10, 9), "next_e": date(2026, 12, 4), "port": 1},
+        {"cierre": date(2026, 11, 5), "curr_e": date(2026, 11, 13), "next_c": date(2026, 12, 10), "prev_c": date(2026, 10, 8), "prev_e": date(2026, 10, 16), "next_e": date(2026, 12, 18), "port": 4},
+        {"cierre": date(2026, 11, 12), "curr_e": date(2026, 11, 23), "next_c": date(2026, 12, 17), "prev_c": date(2026, 10, 15), "prev_e": date(2026, 10, 23), "next_e": date(2026, 12, 28), "port": 3},
+        {"cierre": date(2026, 11, 19), "curr_e": date(2026, 12, 1), "next_c": date(2026, 12, 24), "prev_c": date(2026, 10, 22), "prev_e": date(2026, 11, 2), "next_e": date(2027, 1, 4), "port": 2},
+        {"cierre": date(2026, 11, 26), "curr_e": date(2026, 12, 4), "next_c": date(2026, 12, 31), "prev_c": date(2026, 10, 29), "prev_e": date(2026, 11, 9), "next_e": date(2027, 1, 8), "port": 1},
+        {"cierre": date(2026, 12, 10), "curr_e": date(2026, 12, 18), "next_c": date(2027, 1, 7), "prev_c": date(2026, 11, 5), "prev_e": date(2026, 11, 13), "next_e": date(2027, 1, 15), "port": 4},
+        {"cierre": date(2026, 12, 17), "curr_e": date(2026, 12, 28), "next_c": date(2027, 1, 14), "prev_c": date(2026, 11, 12), "prev_e": date(2026, 11, 23), "next_e": date(2027, 1, 22), "port": 3},
+        {"cierre": date(2026, 12, 24), "curr_e": date(2027, 1, 4), "next_c": date(2027, 1, 21), "prev_c": date(2026, 11, 19), "prev_e": date(2026, 12, 1), "next_e": date(2027, 2, 1), "port": 2},
+        {"cierre": date(2026, 12, 31), "curr_e": date(2027, 1, 8), "next_c": date(2027, 1, 28), "prev_c": date(2026, 11, 26), "prev_e": date(2026, 12, 4), "next_e": date(2027, 2, 5), "port": 1},
     ],
     "FISERV (MasterCard)": [
-        {"cierre": date(2026, 1, 8), "prev_c": date(2025, 12, 11), "next_c": date(2026, 2, 5), "prev_e": date(2025, 12, 19), "curr_e": date(2026, 1, 16), "next_e": date(2026, 2, 13), "port": 13},
-        {"cierre": date(2026, 1, 22), "prev_c": date(2025, 12, 24), "next_c": date(2026, 2, 19), "prev_e": date(2026, 1, 5), "curr_e": date(2026, 2, 2), "next_e": date(2026, 3, 2), "port": 11},
+        # Puedes seguir agregando las de Master aquí si las tienes
+        {"cierre": date(2026, 1, 8), "curr_e": date(2026, 1, 16), "next_c": date(2026, 2, 5), "prev_c": date(2025, 12, 11), "prev_e": date(2025, 12, 19), "next_e": date(2026, 2, 13), "port": 13},
+        {"cierre": date(2026, 1, 22), "curr_e": date(2026, 2, 2), "next_c": date(2026, 2, 19), "prev_c": date(2025, 12, 24), "prev_e": date(2026, 1, 5), "next_e": date(2026, 3, 2), "port": 11},
     ]
 }
 
@@ -75,15 +117,98 @@ with tabs[1]:
     if st.button("Actualizar Cuenta"): st.code(f"UPDATE ACCOUNTS_STATUS SET STATUS_ID={MAPEO_ESTADOS[a_s]}, UPDATED_AT=CURRENT_TIMESTAMP WHERE ACCOUNT_ID=(SELECT ID FROM CREDIT_ACCOUNTS WHERE \"NUMBER\"='{a_n}');", "sql")
 
 with tabs[2]:
-    st.error("⚠️ ELIMINACIONES PERMANENTES")
-    c1, c2 = st.columns(2)
-    with c1:
-        d_dni = st.text_input("DNI Débito:")
-        if st.button("Borrar Débito"): st.code(generar_delete_debit(d_dni), "sql")
-    with c2:
-        d_cif = st.text_area("Cifrados Crédito:")
-        if st.button("Borrar Crédito (CIF)"): st.code(generar_delete_credit_por_cifrado(d_cif), "sql")
+    st.subheader("🛠️ Consultas y Updates Rápidos")
+    
+    # --- SECCIÓN 1: BRANCH Y LÍMITES ---
+    st.markdown("### 1. Gestión de Cuentas y Branch")
+    col1, col2 = st.columns(2)
 
+    with col1:
+        st.markdown("#### 🏦 Cambio de Branch Office")
+        c1, c2 = st.columns(2)
+        cc_br = c1.text_input("Cuenta (CC):", placeholder="Ej: 123456", key="br_cc")
+        val_br = c2.text_input("Nuevo valor Branch:", placeholder="Ej: 1", key="br_val")
+        
+        if st.button("Generar Update Branch"):
+            if cc_br and val_br:
+                st.code(f"UPDATE CREDIT_ACCOUNTS SET BRANCH_OFFICE = {val_br} WHERE \"NUMBER\" = {cc_br};", language="sql")
+            else:
+                st.warning("Completa Cuenta y Branch.")
+
+    with col2:
+        st.markdown("#### 📊 Consulta Rápida Límites")
+        cc_lim = st.text_input("CC para ver Límites:", placeholder="Ej: 123456", key="lim_cc")
+        if st.button("Generar JOIN Límites"):
+            if cc_lim:
+                st.code(f"SELECT ca.\"NUMBER\", cl.* FROM CREDIT_ACCOUNTS ca INNER JOIN CREDIT_LIMITS cl ON ca.LIMIT_ID = cl.ID WHERE ca.\"NUMBER\" = {cc_lim};", language="sql")
+            else:
+                st.warning("Ingresa una cuenta.")
+
+    st.divider()
+
+    # --- SECCIÓN 2: EXCHANGE RATE (DÓLAR) ---
+    st.subheader("💵 Dollar Exchange Rates")
+    st.info("Si la fecha no existe, usa el INSERT. Si ya existe, usa el UPDATE.")
+    
+    c_f, c_p, c_s = st.columns(3)
+    f_rate = c_f.date_input("Fecha del Rate:", key="f_rate_date")
+    p_rate = c_p.text_input("Purchase Price:", value="1420", key="p_rate_val")
+    s_rate = c_s.text_input("Selling Price:", value="1470", key="s_rate_val")
+
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+        if st.button("Generar UPDATE Dólar"):
+            st.code(f"UPDATE DOLLAR_EXCHANGE_RATES SET PURCHASE = {p_rate}, SELLING = {s_rate} WHERE DATE_RATE = TO_DATE('{f_rate}', 'YYYY-MM-DD');", language="sql")
+    
+    with col_btn2:
+        if st.button("Generar INSERT Dólar (Si es nuevo)"):
+            st.code(f"INSERT INTO DOLLAR_EXCHANGE_RATES (ID, DATE_RATE, PURCHASE, SELLING, CREATED_AT) VALUES (NEXTVAL('DOLLAR_EXCHANGE_RATES_ID_SEQ'), TO_DATE('{f_rate}', 'YYYY-MM-DD'), {p_rate}, {s_rate}, CURRENT_TIMESTAMP);", language="sql")
+
+    st.divider()
+
+    # --- SECCIÓN 3: LIQUIDACIONES (SETTLEMENT) ---
+    st.subheader("💳 Liquidaciones (Settlement)")
+    st.markdown("Genera queries de update para saldos de liquidación.")
+    
+    c_liq_acc, c_liq_usd, c_liq_ars = st.columns([2, 1, 1])
+    cc_liq = c_liq_acc.text_input("Número de Cuenta:", placeholder="Ej: 170550...", key="liq_cc")
+    m_usd = c_liq_usd.text_input("Monto USD:", value="0", key="liq_usd")
+    m_ars = c_liq_ars.text_input("Monto ARS:", value="0", key="liq_ars")
+
+    col_v, col_m = st.columns(2)
+    with col_v:
+        if st.button("Update PRISMA (Visa/Amex)"):
+            if cc_liq:
+                st.code(f"UPDATE RD_LIQUIDATIONS_USER_PRISMA SET LAST_LIQ_USD_AMOUNT = {m_usd}, LIQ_AUS_BALANCE = {m_ars} WHERE ACCOUNT = {cc_liq};", language="sql")
+            else:
+                st.error("Falta el número de cuenta.")
+                
+    with col_m:
+        if st.button("Update FISERV (Mastercard)"):
+            if cc_liq:
+                st.code(f"UPDATE RD_LIQUIDATIONS_FISERV SET ACTUAL_DOLAR_BALANCE = {m_usd}, ARP_ACTUAL_BALANCE = {m_ars} WHERE ACCOUNT_NUMBER = {cc_liq};", language="sql")
+            else:
+                st.error("Falta el número de cuenta.")
+
+    st.divider()
+
+    # --- SECCIÓN 4: CONSULTA DE LÍMITES EXTENDIDA ---
+    st.markdown("### 🔍 Consulta de Límites Detallada (JOIN)")
+    cc_join = st.text_input("Ingrese CC para ver tabla completa:", placeholder="Ej: 999888", key="cc_join")
+    
+    if st.button("Generar Query Detallada"):
+        if cc_join:
+            query_join = f"""-- CONSULTAR LÍMITES POR CUENTA (JOIN COMPLETO)
+SELECT 
+    ca."NUMBER" AS Cuenta, 
+    ca.LIMIT_ID, 
+    cl.*
+FROM CREDIT_ACCOUNTS ca
+INNER JOIN CREDIT_LIMITS cl ON ca.LIMIT_ID = cl.ID
+WHERE ca."NUMBER" = {cc_join};"""
+            st.code(query_join, language="sql")
+        else:
+            st.warning("Por favor ingrese un número de cuenta.")
 with tabs[3]:
     dump_in = st.text_area("INSERTS de M_DUMP_DEBIT_CARD:", height=200)
     if st.button("Procesar Dump"): st.code(re.sub(r"VALUES\s*\((.*?)\)\s*;", lambda m: f"INSERT INTO M_DUMP_DEBIT_ACCOUNTS (MDUMP_ID, ACCOUNT_TYPE, ACCOUNT_NUMBER, ACCOUNT_STATUS, ACCOUNT_PREFERRED, ACCOUNT_PRIMARY) VALUES ({m.group(1).split(',')[0].strip()}, '1', {m.group(1).split(',')[16].strip()}, '1', '0', '1');", dump_in, flags=re.I), "sql")
