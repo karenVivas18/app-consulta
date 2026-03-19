@@ -107,6 +107,7 @@ def generar_delete_credit_por_cifrado(cifrados_str):
 st.title("🚀 QA Automation Tool COTA")
 tabs = st.tabs(["📝 Trámites", "🔧 Varios", "⚠️ Eliminación", "📦 Dump", "📅 Settlement", "💰 Simulator", "📋 Protocolo"])
 
+# TAB 1: TRAMITES
 with tabs[0]:
     input_text = st.text_area("Mensaje del chat:", height=150)
     if st.button("Generar Trámites"):
@@ -114,114 +115,102 @@ with tabs[0]:
         if sql: st.code(sql, "sql")
         if mongo: st.code(mongo, "javascript")
 
+# TAB 2: VARIOS (Aquí moví lo que estaba en la 3 por error)
 with tabs[1]:
-    st.subheader("👤 Cliente & Cuenta")
-    col_c1, col_c2, col_c3 = st.columns(3)
-    c_nom, c_ape, c_dni = col_c1.text_input("Nombre:"), col_c2.text_input("Apellido:"), col_c3.text_input("DNI:")
-    if st.button("Update Cliente"): st.code(f"UPDATE CUSTOMERS SET NAME='{c_nom.upper()}', SURNAME='{c_ape.upper()}' WHERE DOCUMENT='{c_dni}';", "sql")
+    st.subheader("🛠️ Updates de Cuenta y Branch")
+    c1, c2 = st.columns(2)
+    with c1:
+        cc_br = st.text_input("Cuenta (CC):", key="br_cc")
+        val_br = st.text_input("Nuevo Branch:", key="br_val")
+        if st.button("Update Branch"):
+            st.code(f"UPDATE CREDIT_ACCOUNTS SET BRANCH_OFFICE = {val_br} WHERE \"NUMBER\" = '{cc_br}';", "sql")
+    with c2:
+        cc_lim = st.text_input("CC para Límites:", key="lim_cc")
+        if st.button("Ver Límites (SQL)"):
+            st.code(f"SELECT ca.\"NUMBER\", cl.* FROM CREDIT_ACCOUNTS ca INNER JOIN CREDIT_LIMITS cl ON ca.LIMIT_ID = cl.ID WHERE ca.\"NUMBER\" = '{cc_lim}';", "sql")
+    
     st.divider()
-    acc_n, acc_st = st.columns(2)
-    a_n = acc_n.text_input("Nro Cuenta:")
-    a_s = acc_st.selectbox("Estado:", list(MAPEO_ESTADOS.keys()))
-    if st.button("Actualizar Cuenta"): st.code(f"UPDATE ACCOUNTS_STATUS SET STATUS_ID={MAPEO_ESTADOS[a_s]}, UPDATED_AT=CURRENT_TIMESTAMP WHERE ACCOUNT_ID=(SELECT ID FROM CREDIT_ACCOUNTS WHERE \"NUMBER\"='{a_n}');", "sql")
+    st.subheader("💵 Dólar Manual")
+    f_d, p_d, s_d = st.columns(3)
+    f_rate = f_d.date_input("Fecha:")
+    p_rate = p_d.text_input("Compra:", "1420")
+    s_rate = s_d.text_input("Venta:", "1470")
+    if st.button("Generar SQL Dólar"):
+        st.code(f"UPDATE DOLLAR_EXCHANGE_RATES SET PURCHASE={p_rate}, SELLING={s_rate} WHERE DATE_RATE=TO_DATE('{f_rate}','YYYY-MM-DD');", "sql")
 
+# TAB 3: ELIMINACIÓN (Recuperada)
 with tabs[2]:
-    st.subheader("🛠️ Consultas y Updates Rápidos")
+    st.subheader("⚠️ Limpieza de Datos (DELETE)")
+    col_del1, col_del2 = st.columns(2)
     
-    # --- SECCIÓN 1: BRANCH Y LÍMITES ---
-    st.markdown("### 1. Gestión de Cuentas y Branch")
-    col1, col2 = st.columns(2)
+    with col_del1:
+        st.markdown("#### 💳 Débito (por DNI)")
+        dni_del = st.text_input("DNI del Cliente:")
+        if st.button("Limpiar Débito"):
+            sql_del = f"""DELETE FROM DEBIT_CARDS_ACCOUNTS WHERE DEBIT_CARD_ID IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni_del}');
+DELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni_del}');
+DELETE FROM DEBIT_CARDS WHERE id IN (SELECT dc.id FROM DEBIT_CARDS dc JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni_del}');
+DELETE FROM CARDS WHERE id IN (SELECT ca.id FROM CARDS ca JOIN DEBIT_CARDS dc ON dc.CARD_ID = ca.id JOIN CUSTOMERS cu ON cu.id = dc.CUSTOMER_ID WHERE cu.DOCUMENT = '{dni_del}');"""
+            st.code(sql_del, "sql")
 
-    with col1:
-        st.markdown("#### 🏦 Cambio de Branch Office")
-        c1, c2 = st.columns(2)
-        cc_br = c1.text_input("Cuenta (CC):", placeholder="Ej: 123456", key="br_cc")
-        val_br = c2.text_input("Nuevo valor Branch:", placeholder="Ej: 1", key="br_val")
-        
-        if st.button("Generar Update Branch"):
-            if cc_br and val_br:
-                st.code(f"UPDATE CREDIT_ACCOUNTS SET BRANCH_OFFICE = {val_br} WHERE \"NUMBER\" = {cc_br};", language="sql")
-            else:
-                st.warning("Completa Cuenta y Branch.")
+    with col_del2:
+        st.markdown("#### 💳 Crédito (por Cifrado)")
+        cif_del = st.text_area("Cifrados (separados por espacio):")
+        if st.button("Limpiar Crédito"):
+            cifrados = [f"'{c.strip()}'" for c in cif_del.split() if c.strip()]
+            if cifrados:
+                lista = ", ".join(cifrados)
+                sql_cif = f"DELETE FROM CARDS_STATUS WHERE CARD_ID IN (SELECT ID FROM CARDS WHERE \"NUMBER\" IN ({lista}));\nDELETE FROM CREDIT_CARDS WHERE CARD_ID IN (SELECT ID FROM CARDS WHERE \"NUMBER\" IN ({lista}));\nDELETE FROM CARDS WHERE \"NUMBER\" IN ({lista});"
+                st.code(sql_cif, "sql")
 
-    with col2:
-        st.markdown("#### 📊 Consulta Rápida Límites")
-        cc_lim = st.text_input("CC para ver Límites:", placeholder="Ej: 123456", key="lim_cc")
-        if st.button("Generar JOIN Límites"):
-            if cc_lim:
-                st.code(f"SELECT ca.\"NUMBER\", cl.* FROM CREDIT_ACCOUNTS ca INNER JOIN CREDIT_LIMITS cl ON ca.LIMIT_ID = cl.ID WHERE ca.\"NUMBER\" = {cc_lim};", language="sql")
-            else:
-                st.warning("Ingresa una cuenta.")
-
-    st.divider()
-
-    # --- SECCIÓN 2: EXCHANGE RATE (DÓLAR) ---
-    st.subheader("💵 Dollar Exchange Rates")
-    st.info("Si la fecha no existe, usa el INSERT. Si ya existe, usa el UPDATE.")
-    
-    c_f, c_p, c_s = st.columns(3)
-    f_rate = c_f.date_input("Fecha del Rate:", key="f_rate_date")
-    p_rate = c_p.text_input("Purchase Price:", value="1420", key="p_rate_val")
-    s_rate = c_s.text_input("Selling Price:", value="1470", key="s_rate_val")
-
-    col_btn1, col_btn2 = st.columns(2)
-    with col_btn1:
-        if st.button("Generar UPDATE Dólar"):
-            st.code(f"UPDATE DOLLAR_EXCHANGE_RATES SET PURCHASE = {p_rate}, SELLING = {s_rate} WHERE DATE_RATE = TO_DATE('{f_rate}', 'YYYY-MM-DD');", language="sql")
-    
-    with col_btn2:
-        if st.button("Generar INSERT Dólar (Si es nuevo)"):
-            st.code(f"INSERT INTO DOLLAR_EXCHANGE_RATES (ID, DATE_RATE, PURCHASE, SELLING, CREATED_AT) VALUES (NEXTVAL('DOLLAR_EXCHANGE_RATES_ID_SEQ'), TO_DATE('{f_rate}', 'YYYY-MM-DD'), {p_rate}, {s_rate}, CURRENT_TIMESTAMP);", language="sql")
-
-    st.divider()
-
-    # --- SECCIÓN 3: LIQUIDACIONES (SETTLEMENT) ---
-    st.subheader("💳 Liquidaciones (Settlement)")
-    st.markdown("Genera queries de update para saldos de liquidación.")
-    
-    c_liq_acc, c_liq_usd, c_liq_ars = st.columns([2, 1, 1])
-    cc_liq = c_liq_acc.text_input("Número de Cuenta:", placeholder="Ej: 170550...", key="liq_cc")
-    m_usd = c_liq_usd.text_input("Monto USD:", value="0", key="liq_usd")
-    m_ars = c_liq_ars.text_input("Monto ARS:", value="0", key="liq_ars")
-
-    col_v, col_m = st.columns(2)
-    with col_v:
-        if st.button("Update PRISMA (Visa/Amex)"):
-            if cc_liq:
-                st.code(f"UPDATE RD_LIQUIDATIONS_USER_PRISMA SET LAST_LIQ_USD_AMOUNT = {m_usd}, LIQ_AUS_BALANCE = {m_ars} WHERE ACCOUNT = {cc_liq};", language="sql")
-            else:
-                st.error("Falta el número de cuenta.")
-                
-    with col_m:
-        if st.button("Update FISERV (Mastercard)"):
-            if cc_liq:
-                st.code(f"UPDATE RD_LIQUIDATIONS_FISERV SET ACTUAL_DOLAR_BALANCE = {m_usd}, ARP_ACTUAL_BALANCE = {m_ars} WHERE ACCOUNT_NUMBER = {cc_liq};", language="sql")
-            else:
-                st.error("Falta el número de cuenta.")
-
-    st.divider()
-
-    # --- SECCIÓN 4: CONSULTA DE LÍMITES EXTENDIDA ---
-    st.markdown("### 🔍 Consulta de Límites Detallada (JOIN)")
-    cc_join = st.text_input("Ingrese CC para ver tabla completa:", placeholder="Ej: 999888", key="cc_join")
-    
-    if st.button("Generar Query Detallada"):
-        if cc_join:
-            query_join = f"""-- CONSULTAR LÍMITES POR CUENTA (JOIN COMPLETO)
-SELECT 
-    ca."NUMBER" AS Cuenta, 
-    ca.LIMIT_ID, 
-    cl.*
-FROM CREDIT_ACCOUNTS ca
-INNER JOIN CREDIT_LIMITS cl ON ca.LIMIT_ID = cl.ID
-WHERE ca."NUMBER" = {cc_join};"""
-            st.code(query_join, language="sql")
-        else:
-            st.warning("Por favor ingrese un número de cuenta.")
+# TAB 4: SETTLEMENT (Con la lógica de portafolios corregida)
 with tabs[3]:
-    dump_in = st.text_area("INSERTS de M_DUMP_DEBIT_CARD:", height=200)
-    if st.button("Procesar Dump"): st.code(re.sub(r"VALUES\s*\((.*?)\)\s*;", lambda m: f"INSERT INTO M_DUMP_DEBIT_ACCOUNTS (MDUMP_ID, ACCOUNT_TYPE, ACCOUNT_NUMBER, ACCOUNT_STATUS, ACCOUNT_PREFERRED, ACCOUNT_PRIMARY) VALUES ({m.group(1).split(',')[0].strip()}, '1', {m.group(1).split(',')[16].strip()}, '1', '0', '1');", dump_in, flags=re.I), "sql")
+    st.subheader("📅 Generador de Settlement")
+    marca = st.selectbox("Marca:", list(DATA_MASTER.keys()))
+    acc_s = st.text_input("Número de Cuenta:", placeholder="429214619")
+    
+    cal_ref = DATA_MASTER[marca]
+    c_selected = st.selectbox("Fecha de Cierre:", options=[f["cierre"] for f in cal_ref], format_func=lambda x: x.strftime("%d/%m/%Y"))
+    reg = next(item for item in cal_ref if item["cierre"] == c_selected)
+    
+    # Montos
+    m1, m2 = st.columns(2)
+    base_p = m1.number_input("Monto Pesos:", value=0.0)
+    base_d = m2.number_input("Monto Dólares:", value=0.0)
 
+    if st.button("🚀 Generar SQL Full Settlement"):
+        m_key = "PRISMA" if "PRISMA" in marca else "FISERV"
+        sem_id = reg["p_maestro"]
+        
+        # IDs según tu regla
+        id_proc = MAPEO_PORTFOLIOS[sem_id][m_key]
+        id_maestro = MAPEO_PORTFOLIOS[sem_id]["MAESTRO"]
+        
+        sql_set = f"""-- 1. DÓLAR
+DELETE FROM DOLLAR_EXCHANGE_RATES WHERE DATE_RATE = TO_DATE('{reg['curr_e']}','YYYY-MM-DD');
+INSERT INTO DOLLAR_EXCHANGE_RATES (DATE_RATE, PURCHASE, SELLING, PROCESS_DATE) 
+VALUES (TO_DATE('{reg['curr_e']}','YYYY-MM-DD'), 1420, 1470, CURRENT_TIMESTAMP);
+
+-- 2. LIQUIDACIÓN (Usa ID Proc: {id_proc})
+UPDATE RD_LIQUIDATIONS_USER_{m_key} 
+SET CLOSING_DATE_LIQ=TO_DATE('{reg['prev_c']}','YYYY-MM-DD'), 
+    LIQ_DATE=TO_DATE('{reg['cierre']}','YYYY-MM-DD'), 
+    EXPIRATION_DATE=TO_DATE('{reg['curr_e']}','YYYY-MM-DD'), 
+    PORTFOLIO={id_proc}, 
+    LIQ_AUS_BALANCE={base_p}, 
+    LAST_LIQ_USD_AMOUNT={base_d} 
+WHERE ACCOUNT='{acc_s}';
+
+-- 3. HEADER (Usa ID Proc: {id_proc})
+UPDATE RD_SUMMARY_HEADER_{m_key} 
+SET CLOSE_DATE_ID=TO_DATE('{reg['cierre']}','YYYY-MM-DD'), 
+    NEXT_CLOSE_DATE=TO_DATE('{reg['next_c']}','YYYY-MM-DD'), 
+    PORTFOLIO={id_proc} 
+WHERE ACCOUNT_NUMBER_ID='{acc_s}';
+
+-- 4. MAESTRO (Usa ID Maestro: {id_maestro})
+UPDATE CREDIT_ACCOUNTS SET PORTFOLIO_TYPE_ID = {id_maestro} WHERE "NUMBER" = '{acc_s}';"""
+        st.code(sql_set, "sql")
 with tabs[4]:
     st.subheader("🚀 Generador de SQL: Settlement & Dólar")
     
