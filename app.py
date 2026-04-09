@@ -5,13 +5,16 @@ from datetime import datetime, date
 # 1. Configuración de la página
 st.set_page_config(page_title="QA Automation Tool COTA", page_icon="🚀", layout="wide")
 
-# --- DATA MAESTRA DE CALENDARIOS ---
-MAPEO_PORTFOLIOS = {
-    1: {"PRISMA": 4, "FISERV": 13}, # 1ra Semana
-    2: {"PRISMA": 3, "FISERV": 14}, # 2da Semana
-    3: {"PRISMA": 2, "FISERV": 11}, # 3ra Semana
-    4: {"PRISMA": 1, "FISERV": 12}, # 4ta Semana
+# --- DATA MAESTRA DE PORTFOLIOS ---
+TABLA_PORTFOLIOS = {
+    1: {"DESC": "1ra Semana", "MAESTRO": 1, "PRISMA": 4, "FISERV": 13},
+    2: {"DESC": "2da Semana", "MAESTRO": 2, "PRISMA": 3, "FISERV": 14},
+    3: {"DESC": "3ra Semana", "MAESTRO": 3, "PRISMA": 2, "FISERV": 11},
+    4: {"DESC": "4ta Semana", "MAESTRO": 4, "PRISMA": 1, "FISERV": 12},
 }
+
+# Alias para mantener compatibilidad con la lógica existente
+MAPEO_PORTFOLIOS = TABLA_PORTFOLIOS
 
 # --- 2. DATA MAESTRA COMPLETA 2026 ---
 # p_maestro identifica la semana (1, 2, 3 o 4)
